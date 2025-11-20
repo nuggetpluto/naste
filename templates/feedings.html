@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Кормления</h2>
+
+<a href="/feedings/add">➕ Новое кормление</a><br><br>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>№</th>
+    <th>Животное</th>
+    <th>Корм</th>
+    <th>Сотрудник</th>
+    <th>Количество</th>
+    <th>Дата и время</th>
+</tr>
+
+{% for f in feedings %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ f.animal_full }}</td>
+    <td>{{ f.feed_name }}</td>
+    <td>{{ f.employee_name }}</td>
+    <td>{{ f.amount }}</td>
+    <td>{{ f.feeding_time }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

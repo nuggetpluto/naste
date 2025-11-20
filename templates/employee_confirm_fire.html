@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Увольнение сотрудника</h2>
+
+<p>Вы действительно хотите уволить сотрудника:</p>
+<h3>{{ employee.full_name }}</h3>
+
+<form method="post" action="/employees/fire/{{ employee.id }}">
+    <button type="submit" style="color:white; background:red; padding:8px;">
+        Подтвердить увольнение
+    </button>
+</form>
+
+<br>
+
+<a href="/employees">Отмена</a>
+
+{% endblock %}

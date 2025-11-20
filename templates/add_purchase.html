@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Создать заявку на закупку</h2>
+<form method="post" action="/purchases/add">
+    <label>Ответственный сотрудник:</label><br>
+    <select name="employee_id">
+        {% for e in employees %}
+        <option value="{{ e.id }}">{{ e.full_name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <button type="submit">Создать заявку</button>
+</form>
+{% endblock %}

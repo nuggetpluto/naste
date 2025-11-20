@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Редактирование животного</h2>
+<form method="post" action="/animals/edit/{{ animal.id }}">
+    <label>Кличка:</label><br>
+    <input type="text" name="name" value="{{ animal.name }}" required><br><br>
+
+    <label>Вид:</label><br>
+    <input type="text" name="species" value="{{ animal.species }}" required><br><br>
+
+        <label>Пол:</label><br>
+    <select name="gender">
+        <option value="м" {% if animal.gender == "м" %}selected{% endif %}>м</option>
+        <option value="ж" {% if animal.gender == "ж" %}selected{% endif %}>ж</option>
+    </select><br><br>
+
+    <label>Состояние здоровья:</label><br>
+    <select name="health_status">
+        <option value="Здоров" {% if animal.health_status == "Здоров" %}selected{% endif %}>Здоров</option>
+        <option value="Лечится" {% if animal.health_status == "Лечится" %}selected{% endif %}>Лечится</option>
+        <option value="Выздоровел" {% if animal.health_status == "Выздоровел" %}selected{% endif %}>Выздоровел</option>
+        <option value="Умер" {% if animal.health_status == "Умер" %}selected{% endif %}>Умер</option>
+    </select><br><br>
+
+    <label>Дата рождения:</label><br>
+    <input type="date" name="birth_date" value="{{ animal.birth_date }}"><br><br>
+
+    <label>Ответственный сотрудник:</label><br>
+    <select name="employee_id">
+        <option value="">(не назначен)</option>
+        {% for emp in employees %}
+        <option value="{{ emp.id }}" {% if animal.employee_id == emp.id %}selected{% endif %}>
+            {{ emp.full_name }}
+        </option>
+        {% endfor %}
+    </select><br><br>
+
+    <button type="submit">Сохранить изменения</button>
+</form>
+{% endblock %}

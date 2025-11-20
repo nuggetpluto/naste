@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Животные</h2>
+
+<a href="/animals/add">➕ Добавить животное</a><br><br>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>№</th>
+    <th>Кличка</th>
+    <th>Вид</th>
+    <th>Пол</th>
+    <th>Здоровье</th>
+    <th>Дата рождения</th>
+    <th>Ответственный</th>
+    <th>Статус</th>
+    <th>Действия</th>
+</tr>
+
+{% for a in animals %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ a.name }}</td>
+    <td>{{ a.species }}</td>
+    <td>{{ a.gender }}</td>
+    <td>{{ a.health_status }}</td>
+    <td>{{ a.birth_date }}</td>
+    <td>{{ a.employee_name if a.employee_name else "-" }}</td>
+    <td>{{ a.status }}</td>
+    <td>
+        <a href="/animals/edit/{{ a.id }}">✏️ Изменить</a>
+        {% if a.status != "Умер" %}
+            | <a href="/animals/deactivate/{{ a.id }}">❌ Умер</a>
+        {% endif %}
+    </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

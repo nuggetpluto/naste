@@ -1,0 +1,54 @@
+<div class="dashboard">
+
+    <div class="card">
+        <h3>Животные</h3>
+        <p class="card-number">{{ stats.animals }}</p>
+        <p class="card-caption">Всего животных</p>
+    </div>
+
+    <div class="card">
+        <h3>Сотрудники</h3>
+        <p class="card-number">{{ stats.employees }}</p>
+        <p class="card-caption">Активных сотрудников</p>
+    </div>
+
+    <div class="card">
+        <h3>Закупки</h3>
+        <p class="card-number">{{ stats.purchases }}</p>
+        <p class="card-caption">Всего заявок</p>
+    </div>
+
+    <div class="card">
+        <h3>Неисправности</h3>
+        <p class="card-number">{{ stats.malfunctions }}</p>
+        <p class="card-caption">Записей о неисправностях</p>
+    </div>
+
+    <div class="card">
+        <h3>Кормления</h3>
+        <p class="card-number">{{ stats.feedings }}</p>
+        <p class="card-caption">Всего записей</p>
+    </div>
+</div>
+
+<hr>
+
+<h3>⚠️ Низкий запас корма</h3>
+
+{% if stats.low_feed %}
+<table>
+    <tr>
+        <th>Название корма</th>
+        <th>Остаток (кг)</th>
+    </tr>
+
+    {% for f in stats.low_feed %}
+    <tr>
+        <td>{{ f.name }}</td>
+        <td style="color:red; font-weight:bold">{{ f.quantity }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p style="color:green; font-weight:bold">Все корма в норме</p>
+{% endif %}

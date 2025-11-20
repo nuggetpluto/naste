@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Главная</h2>
+
+<p>Добро пожаловать, {{ user.full_name }} (роль: {{ user.role }})</p>
+
+<div class="dashboard">
+    <div class="card">
+        <h3>Животные</h3>
+        <p class="card-number">{{ stats.animals }}</p>
+        <p class="card-caption">Всего животных в системе</p>
+    </div>
+
+    <div class="card">
+        <h3>Корм</h3>
+        <p class="card-number">{{ stats.feed }}</p>
+        <p class="card-caption">Наименований корма</p>
+    </div>
+
+    <div class="card">
+        <h3>Сотрудники</h3>
+        <p class="card-number">{{ stats.employees }}</p>
+        <p class="card-caption">Активных сотрудников</p>
+    </div>
+
+    <div class="card">
+        <h3>Закупки</h3>
+        <p class="card-number">{{ stats.purchases }}</p>
+        <p class="card-caption">Создано заявок</p>
+    </div>
+</div>
+
+{% endblock %}

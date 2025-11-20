@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Аналитика</h2>
+
+<!-- ===== ВКЛАДКИ ===== -->
+<div class="tabs">
+    <button class="tab-button active" data-tab="purchases">Закупки</button>
+    <button class="tab-button" data-tab="malfunctions">Неисправности</button>
+    <button class="tab-button" data-tab="feedings">Кормления</button>
+</div>
+
+<!-- ========================================================== -->
+<!-- ================== ВКЛАДКА: ЗАКУПКИ ======================= -->
+<!-- ========================================================== -->
+<div class="tab-content active" id="tab-purchases">
+
+    <div class="filters">
+        <label>
+            Месяц:
+            <input type="month" id="purchases-month">
+        </label>
+        <button type="button" class="btn" onclick="loadPurchases()">Обновить</button>
+    </div>
+
+    <h3>Статусы заявок на закупку</h3>
+    <canvas id="purchasesChart"></canvas>
+
+    <div class="export-buttons">
+        <a href="#" onclick="exportPurchasesExcel(); return false;" class="btn">Экспорт в Excel</a>
+        <a href="/analytics/export/purchases/pdf" class="btn btn-secondary" target="_blank">PDF</a>
+    </div>
+
+    <table id="purchasesTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Сотрудник</th>
+            <th>Статус</th>
+            <th>Дата заявки</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+
+<!-- ========================================================== -->
+<!-- ================ ВКЛАДКА: НЕИСПРАВНОСТИ =================== -->
+<!-- ========================================================== -->
+<div class="tab-content" id="tab-malfunctions">
+
+    <div class="filters">
+        <label>
+            Месяц:
+            <input type="month" id="malfunctions-month">
+        </label>
+        <button type="button" class="btn" onclick="loadMalfunctions()">Обновить</button>
+    </div>
+
+    <h3>Количество неисправностей по местам</h3>
+    <canvas id="malfunctionsChart"></canvas>
+
+    <div class="export-buttons">
+        <a href="#" onclick="exportMalfunctionsExcel(); return false;" class="btn">Экспорт в Excel</a>
+        <a href="/analytics/export/malfunctions/pdf" class="btn btn-secondary" target="_blank">PDF</a>
+    </div>
+
+    <table id="malfunctionsTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Место</th>
+            <th>Описание</th>
+            <th>Статус</th>
+            <th>Дата фиксации</th>
+            <th>Дата устранения</th>
+            <th>Ответственный</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+
+<!-- ========================================================== -->
+<!-- ================== ВКЛАДКА: КОРМЛЕНИЯ ===================== -->
+<!-- ========================================================== -->
+<div class="tab-content" id="tab-feedings">
+
+    <div class="filters">
+        <label>
+            Месяц:
+            <input type="month" id="feedings-month">
+        </label>
+        <button type="button" class="btn" onclick="loadFeedings()">Обновить</button>
+    </div>
+
+    <h3>ТОП-5 животных по количеству кормлений</h3>
+    <canvas id="feedingsChart"></canvas>
+
+    <div class="export-buttons">
+        <a href="#" onclick="exportFeedingsExcel(); return false;" class="btn">Экспорт в Excel</a>
+        <a href="/analytics/export/feedings/pdf" class="btn btn-secondary" target="_blank">PDF</a>
+    </div>
+
+    <table id="feedingsTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Животное</th>
+            <th>Корм</th>
+            <th>Сотрудник</th>
+            <th>Количество</th>
+            <th>Дата/время</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+
+<!-- ===================== Chart.js ====================== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// ===== Переключение вкладок =====
+document.addEventListener("DOMContentLoaded", () => {
+    const buttons = document.querySelectorAll(".tab-button");
+    const contents = document.querySelectorAll(".tab-content");
+
+    buttons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tab = btn.dataset.tab;
+
+            buttons.forEach(b => b.classList.remove("active"));
+            contents.forEach(c => c.classList.remove("active"));
+
+            btn.classList.add("active");
+            document.getElementById("tab-" + tab).classList.add("active");
+
+            if (tab === "purchases") loadPurchases();
+            if (tab === "malfunctions") loadMalfunctions();
+            if (tab === "feedings") loadFeedings();
+        });
+    });
+
+    loadPurchases(); // первая вкладка
+});
+
+
+// ======== ГЛОБАЛЬНЫЕ ОБЪЕКТЫ ГРАФИКОВ ========
+let purchasesChart = null;
+let malfunctionsChart = null;
+let feedingsChart = null;
+
+
+// =====================================================
+// ===================== ЗАКУПКИ =======================
+// =====================================================
+async function loadPurchases() {
+    const month = document.getElementById("purchases-month").value;
+    const params = month ? "?month=" + encodeURIComponent(month) : "";
+
+    const [chartRes, tableRes] = await Promise.all([
+        fetch("/analytics/api/purchases_status" + params),
+        fetch("/analytics/api/purchases_table" + params)
+    ]);
+
+    const chartData = await chartRes.json();
+    const tableData = await tableRes.json();
+
+    // --- График ---
+    const ctx = document.getElementById("purchasesChart").getContext("2d");
+    if (purchasesChart) purchasesChart.destroy();
+    purchasesChart = new Chart(ctx, {
+        type: "pie",
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                data: chartData.data,
+                backgroundColor: ["#4CAF50", "#2196F3", "#FFC107", "#F44336"]
+            }]
+        }
+    });
+
+    // --- Таблица ---
+    const tbody = document.querySelector("#purchasesTable tbody");
+    tbody.innerHTML = "";
+    tableData.rows.forEach(r => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${r.id}</td>
+            <td>${r.employee}</td>
+            <td>${r.status}</td>
+            <td>${r.date}</td>
+        </tr>`;
+    });
+}
+
+function exportPurchasesExcel() {
+    const month = document.getElementById("purchases-month").value;
+    const params = month ? "?month=" + encodeURIComponent(month) : "";
+    window.location.href = "/analytics/export/purchases/excel" + params;
+}
+
+
+// =====================================================
+// ================= НЕИСПРАВНОСТИ =====================
+// =====================================================
+async function loadMalfunctions() {
+    const month = document.getElementById("malfunctions-month").value;
+    const params = month ? "?month=" + encodeURIComponent(month) : "";
+
+    const [chartRes, tableRes] = await Promise.all([
+        fetch("/analytics/api/malfunctions_by_place" + params),
+        fetch("/analytics/api/malfunctions_table" + params)
+    ]);
+
+    const chartData = await chartRes.json();
+    const tableData = await tableRes.json();
+
+    // --- График ---
+    const ctx = document.getElementById("malfunctionsChart").getContext("2d");
+    if (malfunctionsChart) malfunctionsChart.destroy();
+    malfunctionsChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                data: chartData.data,
+                backgroundColor: "#2196F3"
+            }]
+        },
+        options: {
+            indexAxis: "y"
+        }
+    });
+
+    // --- Таблица ---
+    const tbody = document.querySelector("#malfunctionsTable tbody");
+    tbody.innerHTML = "";
+    tableData.rows.forEach(r => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${r.id}</td>
+            <td>${r.place}</td>
+            <td>${r.description}</td>
+            <td>${r.status}</td>
+            <td>${r.created_at ?? ""}</td>
+            <td>${r.resolved_at ?? ""}</td>
+            <td>${r.employee ?? ""}</td>
+        </tr>`;
+    });
+}
+
+function exportMalfunctionsExcel() {
+    const month = document.getElementById("malfunctions-month").value;
+    const params = month ? "?month=" + encodeURIComponent(month) : "";
+    window.location.href = "/analytics/export/malfunctions/excel" + params;
+}
+
+
+// =====================================================
+// =================== КОРМЛЕНИЯ ========================
+// =====================================================
+async function loadFeedings() {
+    const month = document.getElementById("feedings-month").value;
+    const params = month ? "?month=" + encodeURIComponent(month) : "";
+
+    const [chartRes, tableRes] = await Promise.all([
+        fetch("/analytics/api/feedings_top" + params),
+        fetch("/analytics/api/feedings_table" + params)
+    ]);
+
+    const chartData = await chartRes.json();
+    const tableData = await tableRes.json();
+
+    const ctx = document.getElementById("feedingsChart").getContext("2d");
+    if (feedingsChart) feedingsChart.destroy();
+    feedingsChart = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                data: chartData.data,
+                backgroundColor: "#4CAF50"
+            }]
+        }
+    });
+
+    const tbody = document.querySelector("#feedingsTable tbody");
+    tbody.innerHTML = "";
+    tableData.rows.forEach(r => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${r.id}</td>
+            <td>${r.animal}</td>
+            <td>${r.feed}</td>
+            <td>${r.employee}</td>
+            <td>${r.amount}</td>
+            <td>${r.time}</td>
+        </tr>`;
+    });
+}
+
+function exportFeedingsExcel() {
+    const month = document.getElementById("feedings-month").value;
+    const params = month ? "?month=" + encodeURIComponent(month) : "";
+    window.location.href = "/analytics/export/feedings/excel" + params;
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Закупка №{{ purchase.id }}</h2>
+
+<p><strong>Сотрудник:</strong> {{ purchase.employee_name }}</p>
+<p><strong>Статус:</strong> {{ purchase.status }}</p>
+<p><strong>Дата заявки:</strong> {{ purchase.request_date }}</p>
+
+<hr>
+
+<h3>Изменить статус поставки</h3>
+<form method="get" action="/purchases/{{ purchase.id }}/status_update">
+
+    <label>Статус поставки:</label><br>
+    <select name="status">
+        <option value="Ожидание">Ожидание</option>
+        <option value="В процессе">В процессе</option>
+        <option value="Доставлено">Доставлено</option>
+    </select>
+
+    <br><br>
+    <button type="submit">Сохранить</button>
+</form>
+
+<hr>
+
+<h3>Состав закупки</h3>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>№</th>
+    <th>Корм</th>
+    <th>Количество</th>
+</tr>
+
+{% for i in items %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ i.feed_name }}</td>
+    <td>{{ i.quantity }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<br><br>
+
+<h3>Добавить позицию</h3>
+
+<form method="post" action="/purchases/{{ purchase.id }}/add_item">
+
+    <label>Корм:</label><br>
+    <select name="feed_id">
+        {% for f in feeds %}
+        <option value="{{ f.id }}">{{ f.name }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+
+    <label>Количество (в кг):</label><br>
+    <input type="number" step="0.1" name="quantity" required>
+    <br><br>
+
+    <button type="submit">Добавить</button>
+
+</form>
+
+{% endblock %}

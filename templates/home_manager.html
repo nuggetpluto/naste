@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Главная – Менеджер</h2>
+
+<div class="card" style="max-width:400px;">
+    <h3>Профиль</h3>
+    <p><b>Имя:</b> {{ user.full_name }}</p>
+    <p><b>Логин:</b> {{ user.username }}</p>
+    <p><b>Телефон:</b> {{ user.phone }}</p>
+    <p><b>Роль:</b> {{ user.role }}</p>
+
+    <a href="/profile">
+        <button style="margin-top:10px;">Перейти в профиль</button>
+    </a>
+</div>
+
+{% endblock %}

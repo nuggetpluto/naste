@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Управление рационами</h2>
+
+<a href="/rations/add">
+    <button>Добавить рацион</button>
+</a>
+
+<table>
+    <tr>
+        <th>Животное</th>
+        <th>Корм</th>
+        <th>Количество</th>
+        <th>Дата создания</th>
+        <th></th>
+    </tr>
+
+    {% for r in rations %}
+    <tr>
+        <td>{{ r.animal_full }}</td>
+        <td>{{ r.feed_name }}</td>
+        <td>{{ r.amount }}</td>
+        <td>{{ r.created_at }}</td>
+        <td>
+            <a href="/rations/edit/{{ r.id }}">✏️</a>
+            <a href="/rations/delete/{{ r.id }}">🗑</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

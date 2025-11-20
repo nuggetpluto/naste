@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Сотрудники</h2>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>№</th>
+    <th>ФИО</th>
+    <th>Логин</th>
+    <th>Телефон</th>
+    <th>Роль</th>
+    <th>Статус</th>
+    <th>Действия</th>
+</tr>
+
+{% for e in employees %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ e.full_name }}</td>
+    <td>{{ e.username }}</td>
+    <td>{{ e.phone }}</td>
+    <td>{{ e.role }}</td>
+    <td>{{ e.status }}</td>
+
+    <td>
+        {% if e.status == "active" %}
+            <a href="/employees/fire/{{ e.id }}">❌ Уволить</a>
+        {% else %}
+            -
+        {% endif %}
+    </td>
+</tr>
+{% endfor %}
+</table>
+
+{% endblock %}

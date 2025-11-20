@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Регистрация сотрудника</h2>
+
+{% if error %}
+<p style="color:red; font-weight:bold;">{{ error }}</p>
+{% endif %}
+
+{% if message %}
+<p style="color:green; font-weight:bold;">{{ message }}</p>
+{% endif %}
+
+<form method="post" action="/register">
+
+    <label>ФИО:</label><br>
+    <input type="text" name="full_name" required><br><br>
+
+    <label>Имя пользователя:</label><br>
+    <input type="text" name="username" required><br><br>
+
+    <label>Пароль:</label><br>
+    <input type="password" name="password" required><br><br>
+
+    <label>Телефон:</label><br>
+    <input type="text" name="phone" required><br><br>
+
+    <label>Роль:</label><br>
+    <select name="role" required>
+        <option value="zootechnician">Зоотехник</option>
+        <option value="manager">Менеджер</option>
+        <option value="director">Руководитель</option>
+        <option value="admin">Администратор</option>
+    </select>
+    <br><br>
+
+    <button type="submit">Создать аккаунт</button>
+</form>
+
+{% endblock %}

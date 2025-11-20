@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Расходы</h2>
+
+<a href="/expenses/add">➕ Добавить расход</a><br><br>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>№</th>
+    <th>Корм</th>
+    <th>Сотрудник</th>
+    <th>Количество</th>
+    <th>Дата</th>
+</tr>
+
+{% for e in expenses %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ e.feed_name }}</td>
+    <td>{{ e.employee_name }}</td>
+    <td>{{ e.quantity }}</td>
+    <td>{{ e.expense_date }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

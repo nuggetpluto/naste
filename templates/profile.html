@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Профиль сотрудника</h2>
+
+{% if message %}
+<p style="color:green; font-weight:bold;">{{ message }}</p>
+{% endif %}
+{% if error %}
+<p style="color:red; font-weight:bold;">{{ error }}</p>
+{% endif %}
+
+<table cellpadding="8">
+<tr>
+    <td><strong>ФИО:</strong></td>
+    <td>{{ user.full_name }}</td>
+</tr>
+<tr>
+    <td><strong>Логин:</strong></td>
+    <td>{{ user.username }}</td>
+</tr>
+<tr>
+    <td><strong>Роль:</strong></td>
+    <td>{{ user.role }}</td>
+</tr>
+<tr>
+    <td><strong>Статус:</strong></td>
+    <td>{{ user.status }}</td>
+</tr>
+</table>
+
+<hr>
+
+<h3>Изменить контактные данные</h3>
+
+<form method="post" action="/profile/update">
+    <label>Телефон:</label><br>
+    <input type="text" name="phone" value="{{ user.phone }}" required><br><br>
+
+    <label>Новый пароль:</label><br>
+    <input type="password" name="password" placeholder="Введите новый пароль"><br><br>
+
+    <button type="submit">Сохранить изменения</button>
+</form>
+
+{% endblock %}

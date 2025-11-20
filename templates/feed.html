@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Склад кормов</h2>
+
+<a href="/feed/add">➕ Добавить корм</a><br><br>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>№</th>
+    <th>Название</th>
+    <th>Тип</th>
+    <th>Остаток (ед.)</th>
+</tr>
+
+{% for f in feed %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ f.name }}</td>
+    <td>{{ f.type }}</td>
+    <td>{{ f.quantity }} {{ f.unit }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

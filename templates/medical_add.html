@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Добавить медицинский осмотр</h2>
+
+<form method="post" action="/medical/add">
+
+    <label>Животное:</label>
+    <select name="animal_id" required>
+        {% for a in animals %}
+        <option value="{{ a.id }}">{{ a.animal_full }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <label>Сотрудник:</label>
+    <select name="employee_id" required>
+        {% for e in employees %}
+        <option value="{{ e.id }}">{{ e.full_name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <label>Дата осмотра:</label>
+    <input type="date" name="check_date" required><br><br>
+
+    <label>Диагноз:</label>
+    <input type="text" name="diagnosis" required><br><br>
+
+    <label>Примечания:</label>
+    <textarea name="notes"></textarea><br><br>
+
+    <button type="submit">Сохранить</button>
+</form>
+
+{% endblock %}

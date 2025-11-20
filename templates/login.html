@@ -1,0 +1,23 @@
+{% extends "base_auth.html" %}
+
+{% block content %}
+
+<h2 class="auth-title">Добро пожаловать!</h2>
+
+<form class="auth-form" method="post" action="/login">
+
+    <label>Имя пользователя</label>
+    <input type="text" name="username" required>
+
+    <label>Пароль</label>
+    <input type="password" name="password" required>
+
+    <button type="submit" class="auth-btn">Войти</button>
+
+</form>
+
+{% if error %}
+<p class="auth-error">{{ error }}</p>
+{% endif %}
+
+{% endblock %}

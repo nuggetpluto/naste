@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Закупки</h2>
+
+<a href="/purchases/add">➕ Новая закупка</a><br><br>
+
+<table border="1" cellpadding="8">
+<tr>
+    <th>№</th>
+    <th>Сотрудник</th>
+    <th>Статус</th>
+    <th>Дата заявки</th>
+    <th>Действия</th>
+</tr>
+
+{% for p in purchases %}
+<tr>
+    <td>{{ loop.index }}</td>
+    <td>{{ p.employee_name }}</td>
+    <td>{{ p.status }}</td>
+    <td>{{ p.request_date }}</td>
+    <td>
+        <a href="/purchases/{{ p.id }}">📄 Открыть</a>
+    </td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

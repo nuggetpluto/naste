@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title if title else "ZooAdmin" }}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body class="auth-body">
+
+<div class="auth-container">
+
+    <!-- Левый блок -->
+    <div class="auth-left">
+        <h1 class="auth-logo">Zoo<br>Admin</h1>
+    </div>
+
+    <!-- Центральная форма -->
+    <div class="auth-form-wrapper">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Правый блок для зверушки -->
+    <div class="auth-right">
+        <img src="/static/squirrel.png" class="auth-img">
+    </div>
+
+</div>
+
+</body>
+</html>
