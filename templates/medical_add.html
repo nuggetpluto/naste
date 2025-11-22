@@ -1,33 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Добавить медицинский осмотр</h2>
+
+<h2>Добавить медосмотр</h2>
 
 <form method="post" action="/medical/add">
 
-    <label>Животное:</label>
+    <label>Животное:</label><br>
     <select name="animal_id" required>
+        <option value="">Выберите животное</option>
         {% for a in animals %}
-        <option value="{{ a.id }}">{{ a.animal_full }}</option>
+        <option value="{{ a.id }}">{{ a.name }} ({{ a.species }})</option>
         {% endfor %}
-    </select><br><br>
+    </select>
+    <br><br>
 
-    <label>Сотрудник:</label>
+    <label>Сотрудник:</label><br>
     <select name="employee_id" required>
+        <option value="">Выберите сотрудника</option>
         {% for e in employees %}
         <option value="{{ e.id }}">{{ e.full_name }}</option>
         {% endfor %}
-    </select><br><br>
+    </select>
+    <br><br>
 
-    <label>Дата осмотра:</label>
-    <input type="date" name="check_date" required><br><br>
+    <label>Диагноз:</label><br>
+    <select name="diagnosis" id="diagnosis" required onchange="toggleTreatment()">
+        <option value="Здоров">Здоров</option>
+        <option value="Болен">Болен</option>
+        <option value="На лечении">На лечении</option>
+    </select>
+    <br><br>
 
-    <label>Диагноз:</label>
-    <input type="text" name="diagnosis" required><br><br>
+    <div id="treatment-block" style="display:none;">
+        <label>Назначенное лечение:</label><br>
+        <input type="text" name="treatment" placeholder="Введите лечение">
+        <br><br>
+    </div>
 
-    <label>Примечания:</label>
-    <textarea name="notes"></textarea><br><br>
+    <label>Дата осмотра:</label><br>
+    <input type="date" name="exam_date" required value="{{ now().strftime('%Y-%m-%d') }}">
+    <br><br>
 
-    <button type="submit">Сохранить</button>
+    <button type="submit" class="btn">Сохранить</button>
 </form>
+
+<script>
+function toggleTreatment() {
+    const diag = document.getElementById("diagnosis").value;
+    const block = document.getElementById("treatment-block");
+
+    if (diag === "Здоров") {
+        block.style.display = "none";
+    } else {
+        block.style.display = "block";
+    }
+}
+</script>
 
 {% endblock %}

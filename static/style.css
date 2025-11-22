@@ -3,7 +3,7 @@
 body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-    background: #c5f1c8; /* нежно-зелёный фон */
+    background: #c5f1c8;
     color: #222;
 }
 
@@ -23,8 +23,8 @@ input, select, textarea, button {
     left: 0;
     top: 0;
     padding: 30px 24px;
-    box-sizing: border-box;
     border-right: 2px solid #8bd092;
+    box-sizing: border-box;
 }
 
 .logo {
@@ -55,7 +55,7 @@ input, select, textarea, button {
     padding: 8px 10px;
     border-radius: 8px;
     border: 2px solid transparent;
-    transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
+    transition: background 0.2s, border-color 0.2s, transform 0.1s;
 }
 
 .sidebar a:hover {
@@ -82,7 +82,6 @@ input, select, textarea, button {
 .main-content {
     margin-left: 240px;
     padding: 20px 40px;
-    box-sizing: border-box;
 }
 
 .page-header {
@@ -96,86 +95,55 @@ input, select, textarea, button {
 .page-header h1 {
     margin: 0;
     font-size: 24px;
-    font-weight: 700;
     color: #21562a;
 }
 
-.page-content {
-    padding: 10px 0 40px 0;
-}
-
-/* =============== ФОРМЫ И КНОПКИ =============== */
+/* =============== ФОРМЫ =============== */
 
 label {
     font-size: 14px;
 }
 
-input[type="text"],
-input[type="password"],
-input[type="tel"],
-input[type="number"],
-input[type="date"],
-input[type="month"],
+input,
 select,
 textarea {
-    box-sizing: border-box;
     padding: 8px 10px;
     border-radius: 4px;
     border: 2px solid #000;
-    background: #ffffff;
-    outline: none;
+    background: white;
     min-width: 220px;
-}
-
-input:focus,
-select:focus,
-textarea:focus {
-    box-shadow: 0 0 0 2px rgba(0,0,0,0.08);
 }
 
 button,
 .btn {
-    display: inline-block;
     padding: 8px 18px;
     border-radius: 4px;
     border: 2px solid #000;
-    background: #ffffff;
-    color: #000;
-    text-decoration: none;
-    font-size: 15px;
+    background: white;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
 }
 
 button:hover,
 .btn:hover {
     background: #f1f1f1;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    transform: translateY(-1px);
-}
-
-.btn.btn-secondary {
-    border-color: #444;
 }
 
 /* =============== ТАБЛИЦЫ =============== */
 
 table {
-    background: #ffffff;
+    background: white;
     border-collapse: collapse;
     width: 100%;
     margin-top: 20px;
     border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
 }
 
 table th,
 table td {
     border: 1px solid #ddd;
     padding: 10px 12px;
-    font-size: 14px;
 }
 
 table th {
@@ -183,229 +151,28 @@ table th {
     font-weight: 600;
 }
 
-/* =============== КАРТОЧКИ (ГЛАВНАЯ) =============== */
-
-.dashboard {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-}
-
-.card {
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 16px 18px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-}
-
-.card h3 {
-    margin: 0 0 8px 0;
-    font-size: 16px;
-    color: #21562a;
-}
-
-.card-number {
-    font-size: 28px;
-    font-weight: 700;
-    margin: 0;
-}
-
-.card-caption {
-    margin: 4px 0 0 0;
-    font-size: 13px;
-    color: #666;
-}
-
-/* =============== ВЫПАДАЮЩИЕ МЕНЮ =============== */
-
-.dropdown {
-    margin-bottom: 8px;
-}
-
-.dropdown-title {
-    padding: 8px 10px;
-    cursor: pointer;
-    user-select: none;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-radius: 8px;
-    border: 2px solid transparent;
-}
-
-.dropdown-title.active {
-    background-color: #ffffff;
-    border-color: #21562a;
-    color: #000;
-}
-
-.arrow {
-    transition: transform 0.25s ease;
-}
-
-.arrow.rotated {
-    transform: rotate(180deg);
-}
-
-.submenu {
-    max-height: 0;
-    overflow: hidden;
-    padding-left: 14px;
-    transition: max-height 0.25s ease;
-}
-
-.submenu.open {
-    max-height: 500px;
-}
-
-.submenu a {
-    display: block;
-    padding: 5px 4px;
-    margin-bottom: 3px;
-    font-size: 14px;
-    color: #21562a;
-}
-
-.submenu a:hover {
-    color: #000;
-}
-
 /* =============== ТАБЫ В АНАЛИТИКЕ =============== */
 
 .tabs {
-    margin-top: 20px;
-    margin-bottom: 15px;
     display: flex;
     gap: 8px;
+    margin: 15px 0;
 }
 
 .tab-button {
     padding: 8px 16px;
     border-radius: 18px;
     border: 2px solid #000;
-    background: #ffffff;
+    background: white;
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
 }
 
 .tab-button.active {
     background: #21562a;
-    color: #ffffff;
-}
-
-.tab-content {
-    display: none;
-    margin-top: 10px;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-.filters {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.export-buttons {
-    margin: 15px 0;
-    display: flex;
-    gap: 10px;
+    color: white;
 }
 
 canvas {
-    margin-top: 15px;
     max-width: 600px;
     max-height: 350px;
-}
-
-/* =============== СТРАНИЦА ЛОГИНА (НОВАЯ) =============== */
-
-.auth-body {
-    background: #b8e7b0;
-    margin: 0;
-    font-family: Arial, sans-serif;
-}
-
-.auth-container {
-    width: 100%;
-    height: 100vh;
-    display: grid;
-    grid-template-columns: 1fr 350px 1fr;
-    align-items: center;
-    justify-items: center;
-}
-
-.auth-left {
-    text-align: left;
-    padding-left: 40px;
-}
-
-.auth-logo {
-    font-size: 48px;
-    font-weight: 700;
-    line-height: 1.1;
-    color: #1f4d1f;
-}
-
-.auth-form-wrapper {
-    background: white;
-    padding: 35px 40px;
-    border-radius: 10px;
-    border: 2px solid black;
-    width: 350px;
-}
-
-.auth-title {
-    text-align: center;
-    margin-top: 0;
-    margin-bottom: 20px;
-}
-
-.auth-form label {
-    display: block;
-    font-size: 14px;
-    margin-bottom: 4px;
-}
-
-.auth-form input {
-    width: 100%;
-    padding: 10px;
-    border: 2px solid black;
-    border-radius: 4px;
-    margin-bottom: 15px;
-}
-
-.auth-btn {
-    width: 100%;
-    padding: 10px;
-    background: white;
-    border: 2px solid black;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.auth-btn:hover {
-    background: #eeeeee;
-}
-
-.auth-error {
-    color: red;
-    text-align: center;
-    margin-top: 10px;
-}
-
-.auth-right {
-    text-align: center;
-}
-
-.auth-img {
-    width: 250px;
-    height: auto;
 }

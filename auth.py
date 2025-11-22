@@ -33,10 +33,8 @@ async def login(request: Request, username: str = Form(...), password: str = For
             {"request": request, "error": "Неверный логин или пароль, либо сотрудник уволен."}
         )
 
-    # Псевдо-сессия
     session_data["current_user_id"] = user["id"]
 
-    # После успешного входа ведём на главную
     return RedirectResponse(url="/home", status_code=303)
 
 
@@ -58,7 +56,6 @@ async def register(request: Request,
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Проверяем уникальность логина
     cursor.execute("SELECT id FROM employees WHERE username=?", (username,))
     if cursor.fetchone():
         conn.close()
@@ -67,7 +64,6 @@ async def register(request: Request,
             {"request": request, "error": "Логин уже используется."}
         )
 
-    # Проверяем уникальность телефона, если он указан
     if phone:
         cursor.execute("SELECT id FROM employees WHERE phone=?", (phone,))
         if cursor.fetchone():
@@ -91,12 +87,11 @@ async def register(request: Request,
     )
 
 
-# ------------------ Главная (/home) ------------------
+# ------------------ Главная ------------------
 
 @router.get("/home", response_class=HTMLResponse)
 async def home_page(request: Request):
 
-    # Проверка авторизации
     if "current_user_id" not in session_data:
         return RedirectResponse(url="/login", status_code=303)
 
@@ -105,11 +100,9 @@ async def home_page(request: Request):
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Загружаем данные пользователя полностью
     cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
     user = cursor.fetchone()
 
-    # --- СТАТИСТИКА только для admin + director ---
     stats = {}
 
     if user["role"] in ("admin", "director"):
@@ -133,32 +126,18 @@ async def home_page(request: Request):
 
     conn.close()
 
-    # ---- Рендер по роли ----
     if user["role"] == "admin":
-        return templates.TemplateResponse(
-            "home_admin.html",
-            {"request": request, "user": user, "stats": stats}
-        )
+        return templates.TemplateResponse("home_admin.html", {"request": request, "user": user, "stats": stats})
 
     if user["role"] == "director":
-        return templates.TemplateResponse(
-            "home_director.html",
-            {"request": request, "user": user, "stats": stats}
-        )
+        return templates.TemplateResponse("home_director.html", {"request": request, "user": user, "stats": stats})
 
     if user["role"] == "manager":
-        return templates.TemplateResponse(
-            "home_manager.html",
-            {"request": request, "user": user}
-        )
+        return templates.TemplateResponse("home_manager.html", {"request": request, "user": user})
 
     if user["role"] == "zootechnician":
-        return templates.TemplateResponse(
-            "home_zootechnician.html",
-            {"request": request, "user": user}
-        )
+        return templates.TemplateResponse("home_zootechnician.html", {"request": request, "user": user})
 
-    # fallback (если роль неизвестна)
     return RedirectResponse("/profile")
 
 
@@ -166,6 +145,7 @@ async def home_page(request: Request):
 
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request):
+
     if "current_user_id" not in session_data:
         return RedirectResponse(url="/login", status_code=303)
 
@@ -179,20 +159,19 @@ async def profile_page(request: Request):
 
     return templates.TemplateResponse(
         "profile.html",
-        {
-            "request": request,
-            "title": "Профиль сотрудника",
-            "user": user
-        }
+        {"request": request, "title": "Профиль сотрудника", "user": user}
     )
 
 
-# ------------------ Обновление профиля ------------------
+# ------------------ Обновление профиля — только смена пароля ------------------
 
 @router.post("/profile/update", response_class=HTMLResponse)
-async def update_profile(request: Request,
-                         phone: str = Form(...),
-                         password: str = Form("")):
+async def update_profile(
+        request: Request,
+        old_password: str = Form(...),
+        new_password: str = Form(...),
+        confirm_password: str = Form(...)
+    ):
 
     if "current_user_id" not in session_data:
         return RedirectResponse(url="/login", status_code=303)
@@ -202,40 +181,41 @@ async def update_profile(request: Request,
     conn = get_connection()
     cursor = conn.cursor()
 
-    # Проверка: телефон должен быть уникальным
-    cursor.execute("""
-        SELECT id FROM employees 
-        WHERE phone=? AND id <> ?
-    """, (phone, user_id))
-    exist = cursor.fetchone()
+    cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
+    user = cursor.fetchone()
 
-    if exist:
-        # Телефон уже у другого сотрудника
-        cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
-        user = cursor.fetchone()
+    # Проверка старого пароля
+    if old_password != user["password"]:
         conn.close()
         return templates.TemplateResponse(
             "profile.html",
             {
                 "request": request,
                 "title": "Профиль сотрудника",
-                "error": "Этот номер телефона уже закреплён за другим сотрудником.",
-                "user": user
+                "user": user,
+                "error": "Старый пароль введён неверно."
             }
         )
 
-    # Обновляем телефон
-    cursor.execute("UPDATE employees SET phone=? WHERE id=?", (phone, user_id))
+    # Проверка совпадения
+    if new_password != confirm_password:
+        conn.close()
+        return templates.TemplateResponse(
+            "profile.html",
+            {
+                "request": request,
+                "title": "Профиль сотрудника",
+                "user": user,
+                "error": "Новый пароль не совпадает с подтверждением."
+            }
+        )
 
-    # Обновляем пароль, если пользователь ввёл его
-    if password.strip():
-        cursor.execute("UPDATE employees SET password=? WHERE id=?", (password, user_id))
-
+    # Обновление пароля
+    cursor.execute("UPDATE employees SET password=? WHERE id=?", (new_password, user_id))
     conn.commit()
 
-    # Берём обновлённые данные
     cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
-    user = cursor.fetchone()
+    updated_user = cursor.fetchone()
     conn.close()
 
     return templates.TemplateResponse(
@@ -243,8 +223,8 @@ async def update_profile(request: Request,
         {
             "request": request,
             "title": "Профиль сотрудника",
-            "message": "Данные успешно обновлены!",
-            "user": user
+            "user": updated_user,
+            "message": "Пароль успешно обновлён!"
         }
     )
 

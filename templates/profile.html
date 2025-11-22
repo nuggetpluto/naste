@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Профиль сотрудника</h2>
 
 {% if message %}
@@ -30,16 +31,20 @@
 
 <hr>
 
-<h3>Изменить контактные данные</h3>
+<h3>Смена пароля</h3>
 
 <form method="post" action="/profile/update">
-    <label>Телефон:</label><br>
-    <input type="text" name="phone" value="{{ user.phone }}" required><br><br>
+
+    <label>Старый пароль:</label><br>
+    <input type="password" name="old_password" required><br><br>
 
     <label>Новый пароль:</label><br>
-    <input type="password" name="password" placeholder="Введите новый пароль"><br><br>
+    <input type="password" name="new_password" required><br><br>
 
-    <button type="submit">Сохранить изменения</button>
+    <label>Повтор нового пароля:</label><br>
+    <input type="password" name="confirm_password" required><br><br>
+
+    <button type="submit">Изменить пароль</button>
 </form>
 
 {% endblock %}

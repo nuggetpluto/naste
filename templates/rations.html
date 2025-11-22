@@ -1,33 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Управление рационами</h2>
+<h2>Рационы животных</h2>
 
-<a href="/rations/add">
-    <button>Добавить рацион</button>
-</a>
+<a href="/rations/add" class="btn">+ Добавить рацион</a>
 
 <table>
-    <tr>
-        <th>Животное</th>
-        <th>Корм</th>
-        <th>Количество</th>
-        <th>Дата создания</th>
-        <th></th>
-    </tr>
-
-    {% for r in rations %}
-    <tr>
-        <td>{{ r.animal_full }}</td>
-        <td>{{ r.feed_name }}</td>
-        <td>{{ r.amount }}</td>
-        <td>{{ r.created_at }}</td>
-        <td>
-            <a href="/rations/edit/{{ r.id }}">✏️</a>
-            <a href="/rations/delete/{{ r.id }}">🗑</a>
-        </td>
-    </tr>
-    {% endfor %}
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Вид</th>
+            <th>Корм</th>
+            <th>Количество (кг)</th>
+            <th>Частота</th>
+            <th>График</th>
+            <th>Действия</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.species }}</td>
+            <td>{{ row.feed_name }}</td>
+            <td>{{ row.amount }}</td>
+            <td>{{ row.frequency }}</td>
+            <td>{{ row.schedule }}</td>
+            <td>
+                <a class="btn" href="/rations/edit/{{ row.id }}">Изменить</a>
+                <a class="btn btn-secondary" href="/rations/delete/{{ row.id }}" onclick="return confirm('Удалить рацион?')">Удалить</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 
 {% endblock %}

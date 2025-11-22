@@ -2,24 +2,24 @@
 {% block content %}
 <h2>Добавить животное</h2>
 <form method="post" action="/animals/add">
+
     <label>Кличка:</label><br>
     <input type="text" name="name" required><br><br>
 
     <label>Вид:</label><br>
     <input type="text" name="species" required><br><br>
 
-        <label>Пол:</label><br>
+    <label>Пол:</label><br>
     <select name="gender">
-        <option value="м">м</option>
-        <option value="ж">ж</option>
+        <option value="Самец">Самец</option>
+        <option value="Самка">Самка</option>
     </select><br><br>
 
     <label>Состояние здоровья:</label><br>
     <select name="health_status">
         <option value="Здоров">Здоров</option>
-        <option value="Лечится">Лечится</option>
-        <option value="Выздоровел">Выздоровел</option>
-        <option value="Умер">Умер</option>
+        <option value="Болен">Болен</option>
+        <option value="На лечении">На лечении</option>
     </select><br><br>
 
     <label>Дата рождения:</label><br>

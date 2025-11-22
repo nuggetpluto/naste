@@ -1,29 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Медицинские осмотры</h2>
 
-<a href="/medical/add">
-    <button>Добавить осмотр</button>
-</a>
+<div style="margin: 15px 0;">
+    <a href="/medical/add" class="btn">➕ Добавить медосмотр</a>
+</div>
 
 <table>
+    <thead>
     <tr>
+        <th>ID</th>
         <th>Животное</th>
         <th>Сотрудник</th>
-        <th>Дата</th>
         <th>Диагноз</th>
-        <th>Примечания</th>
+        <th>Назначенное лечение</th>
+        <th>Дата осмотра</th>
     </tr>
-
-    {% for c in checks %}
+    </thead>
+    <tbody>
+    {% for m in rows %}
     <tr>
-        <td>{{ c.animal_full }}</td>
-        <td>{{ c.employee_full }}</td>
-        <td>{{ c.check_date }}</td>
-        <td>{{ c.diagnosis }}</td>
-        <td>{{ c.notes }}</td>
+        <td>{{ m.id }}</td>
+        <td>{{ m.animal_full }}</td>
+        <td>{{ m.employee_name }}</td>
+        <td>{{ m.diagnosis }}</td>
+        <td>{{ m.treatment if m.treatment else "" }}</td>
+        <td>{{ m.exam_date }}</td>
     </tr>
     {% endfor %}
+    </tbody>
 </table>
 
 {% endblock %}

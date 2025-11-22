@@ -13,101 +13,51 @@
     {% if user %}
     <ul class="menu">
 
-        {# ---------------------------------- #}
-        {#   РОЛЬ: АДМИНИНСТРАТОР (admin)     #}
-        {# ---------------------------------- #}
         {% if user.role == "admin" %}
             <li><a href="/profile" class="{% if request.url.path == '/profile' %}active{% endif %}">👤 Профиль</a></li>
             <li><a href="/home" class="{% if request.url.path == '/home' %}active{% endif %}">🏠 Главная</a></li>
 
-            <li><a href="/animals" class="{% if request.url.path.startswith('/animals') %}active{% endif %}">🐾 Учёт животных</a></li>
-
-            <li class="dropdown">
-                <div class="dropdown-title {% if request.url.path.startswith('/feed') %}active{% endif %}">
-                    🍖 Корм <span class="arrow">▼</span>
-                </div>
-                <ul class="submenu">
-                    <li><a href="/feed">Список кормов</a></li>
-                    <li><a href="/feed/add">Добавить корм</a></li>
-                </ul>
-            </li>
-
-            <li class="dropdown">
-                <div class="dropdown-title {% if request.url.path.startswith('/feedings') %}active{% endif %}">
-                    🍽️ Кормления <span class="arrow">▼</span>
-                </div>
-                <ul class="submenu">
-                    <li><a href="/feedings">Журнал кормлений</a></li>
-                    <li><a href="/feedings/add">Добавить кормление</a></li>
-                </ul>
-            </li>
-
-            <li><a href="/medical">🩺 Медицинские осмотры</a></li>
-            <li><a href="/expenses" class="{% if request.url.path.startswith('/expenses') %}active{% endif %}">📘 Учёт расходов</a></li>
-            <li><a href="/rations">🥗 Рационы</a></li>
-
+            <li><a href="/animals" class="{% if request.url.path.startswith('/animals') %}active{% endif %}">🐾 Животные</a></li>
+            <li><a href="/feed" class="{% if request.url.path.startswith('/feed') %}active{% endif %}">🍖 Корм</a></li>
+            <li><a href="/feedings" class="{% if request.url.path.startswith('/feedings') %}active{% endif %}">🍽️ Кормления</a></li>
+            <li><a href="/medical" class="{% if request.url.path.startswith('/medical') %}active{% endif %}">🩺 Медосмотры</a></li>
+            <li><a href="/expenses" class="{% if request.url.path.startswith('/expenses') %}active{% endif %}">📘 Расходы</a></li>
+            <li><a href="/rations" class="{% if request.url.path.startswith('/rations') %}active{% endif %}">🥗 Рационы</a></li>
             <li><a href="/purchases" class="{% if request.url.path.startswith('/purchases') %}active{% endif %}">📦 Закупки</a></li>
+            <li><a href="/malfunctions" class="{% if request.url.path.startswith('/malfunctions') %}active{% endif %}">⚠️ Неисправности</a></li>
+            <li><a href="/employees" class="{% if request.url.path.startswith('/employees') %}active{% endif %}">👥 Сотрудники</a></li>
+            <li><a href="/analytics" class="{% if request.url.path.startswith('/analytics') %}active{% endif %}">📊 Аналитика</a></li>
 
-            <li><a href="/malfunctions" class="{% if request.url.path.startswith('/malfunctions') %}active{% endif %}">⚠️ Журнал неисправностей</a></li>
-
-            <li><a href="/employees" class="{% if request.url.path.startswith('/employees') %}active{% endif %}">👥 Управление персоналом</a></li>
-
-            <li>
-                <a href="/analytics"
-                   class="{% if request.url.path.startswith('/analytics') %}active{% endif %}">
-                    📊 Аналитика
-                </a>
-            </li>
-
-        {# ---------------------------------- #}
-        {#   РОЛЬ: РУКОВОДИТЕЛЬ (director)    #}
-        {# ---------------------------------- #}
         {% elif user.role == "director" %}
-
             <li><a href="/profile" class="{% if request.url.path == '/profile' %}active{% endif %}">👤 Профиль</a></li>
-            <li><a href="/home" class="{% if request.url.path == '/home' %}active{% endif %}">🏠 Главная </a></li>
+            <li><a href="/home" class="{% if request.url.path == '/home' %}active{% endif %}">🏠 Главная</a></li>
 
             <li><a href="/purchases" class="{% if request.url.path.startswith('/purchases') %}active{% endif %}">📦 Закупки</a></li>
-            <li><a href="/malfunctions" class="{% if request.url.path.startswith('/malfunctions') %}active{% endif %}">⚠️ Журнал неисправностей</a></li>
-            <li><a href="/employees" class="{% if request.url.path.startswith('/employees') %}active{% endif %}">👥 Управление персоналом</a></li>
+            <li><a href="/malfunctions" class="{% if request.url.path.startswith('/malfunctions') %}active{% endif %}">⚠️ Неисправности</a></li>
+            <li><a href="/employees" class="{% if request.url.path.startswith('/employees') %}active{% endif %}">👥 Сотрудники</a></li>
+            <li><a href="/analytics" class="{% if request.url.path.startswith('/analytics') %}active{% endif %}">📊 Аналитика</a></li>
 
-            <li>
-                <a href="/analytics"
-                   class="{% if request.url.path.startswith('/analytics') %}active{% endif %}">
-                    📊 Аналитика
-                </a>
-            </li>
-
-        {# ---------------------------------- #}
-        {#   РОЛЬ: МЕНЕДЖЕР (manager)         #}
-        {# ---------------------------------- #}
         {% elif user.role == "manager" %}
+            <li><a href="/profile">👤 Профиль</a></li>
+            <li><a href="/home">🏠 Главная</a></li>
 
-            <li><a href="/profile" class="{% if request.url.path == '/profile' %}active{% endif %}">👤 Профиль</a></li>
-            <li><a href="/home" class="{% if request.url.path == '/home' %}active{% endif %}">🏠 Главная</a></li>
+            <li><a href="/animals">🐾 Животные</a></li>
+            <li><a href="/purchases">📦 Закупки</a></li>
+            <li><a href="/malfunctions">⚠️ Неисправности</a></li>
 
-            <li><a href="/animals" class="{% if request.url.path.startswith('/animals') %}active{% endif %}">🐾 Учёт животных</a></li>
-            <li><a href="/purchases" class="{% if request.url.path.startswith('/purchases') %}active{% endif %}">📦 Закупки</a></li>
-            <li><a href="/malfunctions" class="{% if request.url.path.startswith('/malfunctions') %}active{% endif %}">⚠️ Журнал неисправностей</a></li>
-
-        {# ---------------------------------- #}
-        {#   РОЛЬ: ЗООТЕХНИК (zootechnician)  #}
-        {# ---------------------------------- #}
         {% elif user.role == "zootechnician" %}
+            <li><a href="/profile">👤 Профиль</a></li>
+            <li><a href="/home">🏠 Главная</a></li>
 
-            <li><a href="/profile" class="{% if request.url.path == '/profile' %}active{% endif %}">👤 Профиль</a></li>
-            <li><a href="/home" class="{% if request.url.path == '/home' %}active{% endif %}">🏠 Главная</a></li>
-
-            <li><a href="/feedings" class="{% if request.url.path.startswith('/feedings') %}active{% endif %}">🍽️ Журнал кормления</a></li>
-            <li><a href="/medical">🩺 Медицинские осмотры</a></li>
-            <li><a href="/expenses" class="{% if request.url.path.startswith('/expenses') %}active{% endif %}">📘 Учёт расходов</a></li>
-            <li><a href="/rations">🥗 Управление рационами</a></li>
-            <li><a href="/malfunctions" class="{% if request.url.path.startswith('/malfunctions') %}active{% endif %}">⚠️ Журнал неисправностей</a></li>
+            <li><a href="/feedings">🍽️ Кормления</a></li>
+            <li><a href="/medical">🩺 Медосмотры</a></li>
+            <li><a href="/expenses">📘 Расходы</a></li>
+            <li><a href="/rations">🥗 Рационы</a></li>
+            <li><a href="/malfunctions">⚠️ Неисправности</a></li>
 
         {% endif %}
 
         <li><a href="/logout" class="logout">📕 Выйти</a></li>
-
     </ul>
     {% endif %}
 </div>
@@ -123,25 +73,6 @@
         {% block content %}{% endblock %}
     </main>
 </div>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-    const dropdowns = document.querySelectorAll(".dropdown");
-
-    dropdowns.forEach(drop => {
-        const title = drop.querySelector(".dropdown-title");
-        const submenu = drop.querySelector(".submenu");
-        const arrow = drop.querySelector(".arrow");
-
-        if (title) {
-            title.addEventListener("click", () => {
-                submenu.classList.toggle("open");
-                arrow.classList.toggle("rotated");
-            });
-        }
-    });
-});
-</script>
 
 </body>
 </html>

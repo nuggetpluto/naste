@@ -4,7 +4,7 @@ DB_NAME = "zoo.db"
 
 def get_connection():
     conn = sqlite3.connect(DB_NAME)
-    conn.row_factory = sqlite3.Row  # возвращает строки в виде словарей
+    conn.row_factory = sqlite3.Row
     return conn
 
 
@@ -12,6 +12,9 @@ def init_db():
     conn = get_connection()
     cursor = conn.cursor()
 
+    # ----------------------------------------
+    # СОТРУДНИКИ
+    # ----------------------------------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS employees (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,13 +32,16 @@ def init_db():
     VALUES ('admin', '123', 'Администратор', 'admin');
     """)
 
+    # ----------------------------------------
+    # ЖИВОТНЫЕ
+    # ----------------------------------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS animals (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         species TEXT NOT NULL,
-        gender TEXT CHECK(gender IN ('Самец', 'Самка')) DEFAULT 'Самец',
-        health_status TEXT CHECK(health_status IN ('Здоров', 'Болен', 'На лечении')) DEFAULT 'Здоров',
+        gender TEXT CHECK(gender IN ('Самец','Самка')) DEFAULT 'Самец',
+        health_status TEXT CHECK(health_status IN ('Здоров','Болен','На лечении')) DEFAULT 'Здоров',
         birth_date TEXT,
         employee_id INTEGER,
         status TEXT DEFAULT 'Активен',
@@ -43,16 +49,22 @@ def init_db():
     );
     """)
 
+    # ----------------------------------------
+    # КОРМА
+    # ----------------------------------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS feed (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        type TEXT CHECK(type IN ('Влажный', 'Сухой', 'Комбикорм')) DEFAULT 'Сухой',
+        type TEXT CHECK(type IN ('Влажный','Сухой','Комбикорм')) DEFAULT 'Сухой',
         unit TEXT DEFAULT 'кг',
         quantity REAL DEFAULT 0
     );
     """)
 
+    # ----------------------------------------
+    # КОРМЛЕНИЯ
+    # ----------------------------------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS feedings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,6 +79,9 @@ def init_db():
     );
     """)
 
+    # ----------------------------------------
+    # РАСХОД КОРМА
+    # ----------------------------------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS expenses (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,6 +94,9 @@ def init_db():
     );
     """)
 
+    # ----------------------------------------
+    # ЗАКУПКИ
+    # ----------------------------------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS purchases (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,6 +118,9 @@ def init_db():
     );
     """)
 
+    # ----------------------------------------
+    # НЕИСПРАВНОСТИ
+    # ----------------------------------------
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS malfunctions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,7 +130,39 @@ def init_db():
         place TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'Зафиксировано',
         resolved_at TEXT
-    )
+    );
+    """)
+
+    # ----------------------------------------
+    # ★ НОВОЕ: РАЦИОНЫ ★
+    # ----------------------------------------
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS rations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        feed_id INTEGER NOT NULL,
+        species TEXT NOT NULL,
+        amount REAL NOT NULL CHECK(amount >= 0),
+        frequency TEXT NOT NULL,
+        FOREIGN KEY(feed_id) REFERENCES feed(id)
+    );
+    """)
+
+    # ----------------------------------------
+    # ★ НОВОЕ: МЕДОСМОТРЫ ★
+    # ----------------------------------------
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS medical_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        animal_id INTEGER NOT NULL,
+        exam_date TEXT NOT NULL,
+        diagnosis TEXT NOT NULL,
+        treatment TEXT,
+        vaccination TEXT,
+        result TEXT,
+        FOREIGN KEY(employee_id) REFERENCES employees(id),
+        FOREIGN KEY(animal_id) REFERENCES animals(id)
+    );
     """)
 
     conn.commit()

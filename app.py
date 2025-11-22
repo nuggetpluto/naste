@@ -60,7 +60,7 @@ _TemplateResponse.__init__ = patched_init
 # ====== РОУТЫ ======
 
 from auth import router as auth_router
-from routers import animals, feed, feedings, expenses, purchases, employees, malfunctions, analytics
+from routers import animals, feed, feedings, expenses, purchases, employees, malfunctions, analytics, medical, rations
 
 app.include_router(auth_router)
 app.include_router(malfunctions.router)
@@ -71,7 +71,8 @@ app.include_router(expenses.router)
 app.include_router(purchases.router)
 app.include_router(employees.router)
 app.include_router(analytics.router)
-
+app.include_router(rations.router)
+app.include_router(medical.router)
 
 # ====== ИНИЦИАЛИЗАЦИЯ БД ======
 
