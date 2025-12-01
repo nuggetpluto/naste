@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Добавить неисправность</h2>
+
+<form method="post">
+
+    {% if role == "manager" %}
+        <label>Место:</label><br>
+        <select name="place" required>
+            {% for loc in locations %}
+                <option value="{{ loc }}">{{ loc }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+    {% endif %}
+
+    {% if role == "zootechnician" %}
+        <p><b>Место:</b> Вольер (назначается автоматически)</p>
+    {% endif %}
+
+    <label>Описание проблемы:</label><br>
+    <textarea name="description" rows="4" style="width:300px;" required></textarea>
+
+    <br><br>
+    <button class="btn">Сохранить</button>
+</form>
+
+{% endblock %}

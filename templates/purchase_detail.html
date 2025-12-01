@@ -1,36 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Закупка №{{ purchase.id }}</h2>
 
-<p><strong>Сотрудник:</strong> {{ purchase.employee_name }}</p>
-<p><strong>Статус:</strong> {{ purchase.status }}</p>
-<p><strong>Дата заявки:</strong> {{ purchase.request_date }}</p>
+<p><b>Сотрудник:</b> {{ purchase.employee_name }}</p>
+<p><b>Поставщик:</b> {{ purchase.supplier }}</p>
+<p><b>Дата заявки:</b> {{ purchase.request_date.strftime("%d.%m.%Y") }}</p>
+<p><b>Статус:</b> {{ purchase.status }}</p>
 
 <hr>
 
+{% if user.role in ["manager", "director"] %}
 <h3>Изменить статус поставки</h3>
-<form method="get" action="/purchases/{{ purchase.id }}/status_update">
+
+<form method="post" action="/purchases/{{ purchase.id }}/status_update">
 
     <label>Статус поставки:</label><br>
-    <select name="status">
-        <option value="Ожидание">Ожидание</option>
-        <option value="В процессе">В процессе</option>
-        <option value="Доставлено">Доставлено</option>
+    <select name="status" required>
+        <option value="Заявка отправлена" {% if purchase.status == "Заявка отправлена" %}selected{% endif %}>Заявка отправлена</option>
+        <option value="Ожидание" {% if purchase.status == "Ожидание" %}selected{% endif %}>Ожидание</option>
+        <option value="Доставлено" {% if purchase.status == "Доставлено" %}selected{% endif %}>Доставлено</option>
     </select>
 
     <br><br>
-    <button type="submit">Сохранить</button>
+    <button class="btn" type="submit">Сохранить статус</button>
+
+    {% if error %}
+        <p style="color: red; margin-top: 10px; font-weight: bold;">
+            {{ error }}
+        </p>
+    {% endif %}
 </form>
 
 <hr>
+{% endif %}
 
 <h3>Состав закупки</h3>
 
-<table border="1" cellpadding="8">
+<table>
 <tr>
     <th>№</th>
     <th>Корм</th>
-    <th>Количество</th>
+    <th>Количество (кг)</th>
 </tr>
 
 {% for i in items %}
@@ -42,26 +53,25 @@
 {% endfor %}
 </table>
 
+{% if allow_add %}
 <br><br>
-
 <h3>Добавить позицию</h3>
 
 <form method="post" action="/purchases/{{ purchase.id }}/add_item">
 
     <label>Корм:</label><br>
-    <select name="feed_id">
+    <select name="feed_id" required>
         {% for f in feeds %}
-        <option value="{{ f.id }}">{{ f.name }}</option>
+            <option value="{{ f.id }}">{{ f.name }}</option>
         {% endfor %}
     </select>
     <br><br>
 
-    <label>Количество (в кг):</label><br>
-    <input type="number" step="0.1" name="quantity" required>
-    <br><br>
+    <label>Количество (кг):</label><br>
+    <input type="number" name="quantity" min="1" step="1" required><br><br>
 
-    <button type="submit">Добавить</button>
-
+    <button class="btn" type="submit">Добавить</button>
 </form>
+{% endif %}
 
 {% endblock %}

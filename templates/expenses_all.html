@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Расходы кормов по сотрудникам</h2>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Дата</th>
+        <th>Сотрудник</th>
+        <th>Корм</th>
+        <th>Количество</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for e in expenses %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ e.date.strftime("%d.%m.%Y") }}</td>
+            <td>{{ e.employee_name }}</td>
+            <td>{{ e.feed_name }}</td>
+            <td>{{ e.quantity }} {{ e.unit }}</td>
+        </tr>
+    {% endfor %}
+    {% if expenses|length == 0 %}
+        <tr>
+            <td colspan="5" style="text-align: center; color: #777;">
+                Пока нет данных о расходах
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,100 +1,91 @@
-from fastapi import APIRouter, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse
+import psycopg2.extras
+
 from db import get_connection
 from permissions import role_required
+from app import templates
 
-templates = Jinja2Templates(directory="templates")
 router = APIRouter()
 
 
-# -------------------------------------------------------
-# СПИСОК РАСХОДОВ — admin + zootechnician
-# -------------------------------------------------------
-@router.get("/expenses", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
-async def expenses_list(request: Request):
-    conn = get_connection()
-    cursor = conn.cursor()
+# ============================================================
+# МОИ РАСХОДЫ — для зоотехника
+# ============================================================
+@router.get("/expenses/my", response_class=HTMLResponse)
+@role_required(["zootechnician"])
+async def my_expenses(request: Request):
+    user = request.state.user
+    employee_id = user["id"]
 
-    cursor.execute("""
-        SELECT e.id,
-               f.name AS feed_name,
-               em.full_name AS employee_name,
-               e.quantity,
-               e.expense_date
-        FROM expenses e
-        JOIN feed f ON e.feed_id = f.id
-        JOIN employees em ON e.employee_id = em.id
-        ORDER BY e.expense_date DESC
-    """)
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cursor.execute(
+        """
+        SELECT
+            r."IDРасхода"     AS id,
+            r."Дата"          AS date,
+            k."Наименование"  AS feed_name,
+            k."ЕдиницаИзмерения" AS unit,
+            r."Количество"    AS quantity
+        FROM "Расход" r
+        JOIN "Корм" k ON k."IDКорма" = r."IDКорма"
+        WHERE r."IDСотрудника" = %s
+        ORDER BY r."Дата" DESC, r."IDРасхода" DESC
+        """,
+        (employee_id,)
+    )
 
     expenses = cursor.fetchall()
     conn.close()
 
     return templates.TemplateResponse(
-        "expenses.html",
+        "expenses_my.html",
         {
             "request": request,
-            "expenses": expenses
+            "user": user,
+            "expenses": expenses,
         }
     )
 
 
-# -------------------------------------------------------
-# ФОРМА ДОБАВЛЕНИЯ — admin + zootechnician
-# -------------------------------------------------------
-@router.get("/expenses/add", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
-async def add_expense_form(request: Request):
+# ============================================================
+# ВСЕ РАСХОДЫ — для менеджера / директора / админа
+# (простая версия, без аналитики, сделаем потом умнее)
+# ============================================================
+@router.get("/expenses", response_class=HTMLResponse)
+@role_required(["manager", "director", "admin"])
+async def all_expenses(request: Request):
+    user = request.state.user
+
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cursor.execute("SELECT id, name FROM feed")
-    feeds = cursor.fetchall()
+    cursor.execute(
+        """
+        SELECT
+            r."IDРасхода"     AS id,
+            r."Дата"          AS date,
+            s."ФИО"           AS employee_name,
+            k."Наименование"  AS feed_name,
+            k."ЕдиницаИзмерения" AS unit,
+            r."Количество"    AS quantity
+        FROM "Расход" r
+        JOIN "Корм" k ON k."IDКорма" = r."IDКорма"
+        JOIN "Сотрудник" s ON s."IDСотрудника" = r."IDСотрудника"
+        ORDER BY r."Дата" DESC, r."IDРасхода" DESC
+        """
+    )
 
-    cursor.execute("SELECT id, full_name FROM employees WHERE status='active'")
-    employees = cursor.fetchall()
-
+    expenses = cursor.fetchall()
     conn.close()
 
     return templates.TemplateResponse(
-        "add_expense.html",
+        "expenses_all.html",
         {
             "request": request,
-            "feeds": feeds,
-            "employees": employees
+            "user": user,
+            "expenses": expenses,
         }
     )
-
-
-# -------------------------------------------------------
-# ДОБАВЛЕНИЕ РАСХОДА — admin + zootechnician
-# -------------------------------------------------------
-@router.post("/expenses/add", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
-async def add_expense(
-        request: Request,
-        feed_id: int = Form(...),
-        employee_id: int = Form(...),
-        quantity: float = Form(...)
-):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    # уменьшаем остаток корма
-    cursor.execute(
-        "UPDATE feed SET quantity = quantity - ? WHERE id=?",
-        (quantity, feed_id)
-    )
-
-    # добавляем запись о расходе
-    cursor.execute("""
-        INSERT INTO expenses (feed_id, employee_id, quantity)
-        VALUES (?, ?, ?)
-    """, (feed_id, employee_id, quantity))
-
-    conn.commit()
-    conn.close()
-
-    return RedirectResponse(url="/expenses", status_code=303)

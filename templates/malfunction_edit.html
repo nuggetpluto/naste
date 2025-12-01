@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Изменить статус неисправности</h2>
+
+<p><b>Описание:</b> {{ mal.description }}</p>
+<p><b>Место:</b> {{ mal.place }}</p>
+<p><b>Текущий статус:</b> {{ mal.status }}</p>
+
+<form method="post" action="/malfunctions/edit/{{ mal.id }}">
+    <button type="submit" class="btn">Изменить статус</button>
+</form>
+
+{% endblock %}

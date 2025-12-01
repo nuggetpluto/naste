@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% set active = "expenses" %}
+{% include "analytics_navbar.html" %}
+
+<h2>Аналитика расходов корма</h2>
+
+<p class="text-muted">
+    Раздел доступен только руководителю. Здесь отображается расход корма по сотрудникам и видам корма.
+</p>
+
+<!-- Фильтры по периоду -->
+<div style="margin: 15px 0;">
+    <a href="/analytics?period=day"
+       class="btn {% if period == 'day' %}btn-primary{% else %}btn-secondary{% endif %}">
+        За сегодня
+    </a>
+    <a href="/analytics?period=month"
+       class="btn {% if period == 'month' %}btn-primary{% else %}btn-secondary{% endif %}">
+        За месяц
+    </a>
+    <a href="/analytics?period=all"
+       class="btn {% if period == 'all' %}btn-primary{% else %}btn-secondary{% endif %}">
+        За всё время
+    </a>
+</div>
+<a href="/analytics/export/csv?period={{ period }}" class="btn btn-secondary">
+    Экспорт CSV
+</a>
+<hr>
+
+<h3>Расход по видам корма</h3>
+
+{% if chart_labels|length == 0 %}
+    <p class="text-muted">За выбранный период расхода корма не зафиксировано.</p>
+{% else %}
+    <div style="max-width: 500px;">
+        <canvas id="feedsPie"></canvas>
+    </div>
+{% endif %}
+
+<hr>
+
+<h3>Расход по сотрудникам</h3>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Сотрудник</th>
+        <th>Всего корма (кг)</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in by_employees %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row.employee_name }}</td>
+            <td>{{ row.total_amount }}</td>
+        </tr>
+    {% endfor %}
+    {% if by_employees|length == 0 %}
+        <tr>
+            <td colspan="3" style="text-align: center; color: #777;">
+                Нет данных за выбранный период
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+
+<hr>
+
+<h3>Расход по видам корма (таблица)</h3>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Корм</th>
+        <th>Всего израсходовано (кг)</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in by_feeds %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ row.feed_name }}</td>
+            <td>{{ row.total_amount }}</td>
+        </tr>
+    {% endfor %}
+    {% if by_feeds|length == 0 %}
+        <tr>
+            <td colspan="3" style="text-align: center; color: #777;">
+                Нет данных за выбранный период
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+
+<hr>
+
+<h3>Детальная таблица расходов</h3>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Дата</th>
+        <th>Сотрудник</th>
+        <th>Корм</th>
+        <th>Количество (кг)</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for row in details %}
+        <tr>
+            <td>{{ row.id }}</td>
+            <td>{{ row.date.strftime("%d.%m.%Y") }}</td>
+            <td>{{ row.employee_name }}</td>
+            <td>{{ row.feed_name }}</td>
+            <td>{{ row.amount }}</td>
+        </tr>
+    {% endfor %}
+    {% if details|length == 0 %}
+        <tr>
+            <td colspan="5" style="text-align: center; color: #777;">
+                Нет данных за выбранный период
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const pieLabels = {{ chart_labels | tojson }};
+    const pieData   = {{ chart_data   | tojson }};
+
+    if (pieLabels.length > 0) {
+        const ctx = document.getElementById('feedsPie').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: pieLabels,
+                datasets: [{
+                    data: pieData
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+</script>
+
+{% endblock %}

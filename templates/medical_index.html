@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Медкарты животных</h2>
+
+<form method="get" action="/medical" style="margin-bottom: 15px;">
+    <label>Фильтр по виду:</label>
+    <input type="text" name="species" value="{{ filter_species }}" placeholder="Например: Кролик">
+    <button class="btn" type="submit">Найти</button>
+</form>
+
+<p>Выберите животное, чтобы открыть его медицинскую карту.</p>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Животное</th>
+        <th>Ответственный сотрудник</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for a in animals %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ a.name }} ({{ a.species }})</td>
+        <td>{{ a.employee_name or "—" }}</td>
+        <td>
+            <a class="btn" href="/animals/{{ a.id }}/medical">
+                Открыть медкарту
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

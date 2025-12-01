@@ -1,28 +1,72 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Закупки</h2>
 
-<a href="/purchases/add">➕ Новая закупка</a><br><br>
+{% if user.role in ["manager", "director"] %}
+<p>
+    <a href="/purchases/add" class="btn">➕ Новая закупка</a>
+</p>
+{% endif %}
 
-<table border="1" cellpadding="8">
-<tr>
-    <th>№</th>
-    <th>Сотрудник</th>
-    <th>Статус</th>
-    <th>Дата заявки</th>
-    <th>Действия</th>
-</tr>
+<!-- Форма фильтров -->
+<form method="get" class="form-inline" style="margin-bottom: 20px; display:flex; gap:10px; flex-wrap:wrap;">
 
-{% for p in purchases %}
-<tr>
-    <td>{{ loop.index }}</td>
-    <td>{{ p.employee_name }}</td>
-    <td>{{ p.status }}</td>
-    <td>{{ p.request_date }}</td>
-    <td>
-        <a href="/purchases/{{ p.id }}">📄 Открыть</a>
-    </td>
-</tr>
-{% endfor %}
+    <select name="supplier" class="form-control">
+        <option value="">Все поставщики</option>
+        {% for s in suppliers %}
+            <option value="{{ s.supplier }}" {% if supplier_value == s.supplier %}selected{% endif %}>
+                {{ s.supplier }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="status" class="form-control">
+        <option value="">Все статусы</option>
+        <option value="Заявка отправлена" {% if status_value == "Заявка отправлена" %}selected{% endif %}>Заявка отправлена</option>
+        <option value="Ожидание" {% if status_value == "Ожидание" %}selected{% endif %}>Ожидание</option>
+        <option value="Доставлено" {% if status_value == "Доставлено" %}selected{% endif %}>Доставлено</option>
+    </select>
+
+    <button class="btn btn-primary" type="submit">Поиск</button>
+
+    {% if supplier_value or status_value %}
+        <a href="/purchases" class="btn" style="margin-left:10px;">Сбросить</a>
+    {% endif %}
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Сотрудник</th>
+        <th>Поставщик</th>
+        <th>Дата заявки</th>
+        <th>Статус</th>
+        <th>Действия</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    {% for p in purchases %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.employee_name }}</td>
+            <td>{{ p.supplier }}</td>
+            <td>{{ p.request_date.strftime("%d.%m.%Y") }}</td>
+            <td>{{ p.status }}</td>
+            <td>
+                <a href="/purchases/{{ p.id }}">📄 Открыть</a>
+            </td>
+        </tr>
+    {% endfor %}
+
+    {% if purchases|length == 0 %}
+        <tr>
+            <td colspan="6" style="text-align:center; color:#777;">Нет данных</td>
+        </tr>
+    {% endif %}
+    </tbody>
 </table>
+
 {% endblock %}

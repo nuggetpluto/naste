@@ -1,36 +1,61 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Сотрудники</h2>
 
+<a href="/employees/add">
+    <button class="btn">➕ Добавить сотрудника</button>
+</a>
+
+<br><br>
+
+<form method="get" action="/employees" style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+
+    <input type="text" name="search" placeholder="Поиск по ФИО" value="{{ search }}">
+
+    <select name="role">
+        <option value="">Все должности</option>
+        <option value="Руководитель" {% if selected_role=='Руководитель' %}selected{% endif %}>Руководитель</option>
+        <option value="Менеджер" {% if selected_role=='Менеджер' %}selected{% endif %}>Менеджер</option>
+        <option value="Зоотехник" {% if selected_role=='Зоотехник' %}selected{% endif %}>Зоотехник</option>
+    </select>
+
+    <button class="btn btn-primary" type="submit">Поиск</button>
+
+    {% if search or selected_role %}
+        <a href="/employees" class="btn" style="margin-left:10px;">Сбросить</a>
+    {% endif %}
+</form>
+
 <table border="1" cellpadding="8">
-<tr>
-    <th>№</th>
-    <th>ФИО</th>
-    <th>Логин</th>
-    <th>Телефон</th>
-    <th>Роль</th>
-    <th>Статус</th>
-    <th>Действия</th>
-</tr>
+    <tr>
+        <th>№</th>
+        <th>ФИО</th>
+        <th>Телефон</th>
+        <th>Должность</th>
+        <th>График работы</th>
+        <th>Статус</th>
+        <th>Действия</th>
+    </tr>
 
-{% for e in employees %}
-<tr>
-    <td>{{ loop.index }}</td>
-    <td>{{ e.full_name }}</td>
-    <td>{{ e.username }}</td>
-    <td>{{ e.phone }}</td>
-    <td>{{ e.role }}</td>
-    <td>{{ e.status }}</td>
+    {% for e in employees %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ e.full_name }}</td>
+        <td>{{ e.phone }}</td>
+        <td>{{ e.role }}</td>
+        <td>{{ e.schedule }}</td>
+        <td>{{ e.status }}</td>
 
-    <td>
-        {% if e.status == "active" %}
-            <a href="/employees/fire/{{ e.id }}">❌ Уволить</a>
-        {% else %}
-            -
-        {% endif %}
-    </td>
-</tr>
-{% endfor %}
+        <td>
+            <a href="/employees/edit/{{ e.id }}">✏️</a>
+
+            {% if e.role != "Руководитель" and e.status == "Активен" %}
+                | <a href="/employees/fire/{{ e.id }}">❌</a>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
 </table>
 
 {% endblock %}

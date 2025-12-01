@@ -1,60 +1,35 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Добавить медосмотр</h2>
+<h2>Добавить запись медосмотра — {{ animal.name }} ({{ animal.species }})</h2>
 
-<form method="post" action="/medical/add">
+{% if error %}
+<div style="background:#ffcccc; padding:10px; margin-bottom:15px; border:1px solid #cc0000;">
+    {{ error }}
+</div>
+{% endif %}
 
-    <label>Животное:</label><br>
-    <select name="animal_id" required>
-        <option value="">Выберите животное</option>
-        {% for a in animals %}
-        <option value="{{ a.id }}">{{ a.name }} ({{ a.species }})</option>
-        {% endfor %}
-    </select>
-    <br><br>
-
-    <label>Сотрудник:</label><br>
-    <select name="employee_id" required>
-        <option value="">Выберите сотрудника</option>
-        {% for e in employees %}
-        <option value="{{ e.id }}">{{ e.full_name }}</option>
-        {% endfor %}
-    </select>
-    <br><br>
-
+<form method="post">
     <label>Диагноз:</label><br>
-    <select name="diagnosis" id="diagnosis" required onchange="toggleTreatment()">
-        <option value="Здоров">Здоров</option>
-        <option value="Болен">Болен</option>
-        <option value="На лечении">На лечении</option>
-    </select>
+    <input type="text" name="diagnosis" required placeholder="Если патологий нет:«нет»">
     <br><br>
 
-    <div id="treatment-block" style="display:none;">
-        <label>Назначенное лечение:</label><br>
-        <input type="text" name="treatment" placeholder="Введите лечение">
-        <br><br>
-    </div>
-
-    <label>Дата осмотра:</label><br>
-    <input type="date" name="exam_date" required value="{{ now().strftime('%Y-%m-%d') }}">
+    <label>Назначенное лечение:</label><br>
+    <textarea name="treatment" rows="3">{{ form.treatment if form else '' }}</textarea>
     <br><br>
 
-    <button type="submit" class="btn">Сохранить</button>
+    <label>Прививки:</label><br>
+    <input type="text" name="vaccines" value="{{ form.vaccines if form else '' }}">
+    <br><br>
+
+    <label>Результат процедуры (обязательно):</label><br>
+    <input type="text" name="result" required value="{{ form.result if form else '' }}">
+    <br><br>
+
+    <button class="btn">Сохранить</button>
 </form>
 
-<script>
-function toggleTreatment() {
-    const diag = document.getElementById("diagnosis").value;
-    const block = document.getElementById("treatment-block");
-
-    if (diag === "Здоров") {
-        block.style.display = "none";
-    } else {
-        block.style.display = "block";
-    }
-}
-</script>
+<br>
+<a href="/animals/{{ animal.id }}/medical" class="btn">← Назад</a>
 
 {% endblock %}

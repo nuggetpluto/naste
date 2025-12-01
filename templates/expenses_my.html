@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Мои расходы кормов</h2>
+
+<p>Сотрудник: <b>{{ user.full_name }}</b></p>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Дата</th>
+        <th>Корм</th>
+        <th>Количество</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for e in expenses %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ e.date.strftime("%d.%m.%Y") }}</td>
+            <td>{{ e.feed_name }}</td>
+            <td>{{ e.quantity }} {{ e.unit }}</td>
+        </tr>
+    {% endfor %}
+    {% if expenses|length == 0 %}
+        <tr>
+            <td colspan="4" style="text-align: center; color: #777;">
+                Расходы ещё не зарегистрированы
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>
+
+<a href="/feedings" class="btn" style="margin-top: 15px;">⬅ Вернуться к кормлениям</a>
+
+{% endblock %}

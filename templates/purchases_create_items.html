@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Новая закупка — состав</h2>
+
+<p>
+    <strong>Поставщик:</strong> {{ purchase.supplier }}
+</p>
+
+<p class="text-muted">
+    Закупка будет создана только после добавления первой позиции.
+    Если вы просто вернётесь на страницу «Закупки», запись создана не будет.
+</p>
+
+<hr>
+
+<h3>Добавить позицию</h3>
+
+<form method="post" action="/purchases/create/add_item">
+
+    <!-- скрыто передаём данные из шага 1 -->
+    <input type="hidden" name="supplier" value="{{ purchase.supplier }}">
+    <input type="hidden" name="employee_id" value="{{ purchase.employee_id }}">
+
+    <label for="feed_id">Корм:</label><br>
+    <select name="feed_id" id="feed_id" required>
+        {% for f in feeds %}
+            <option value="{{ f.id }}">{{ f.name }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+
+    <label for="quantity">Количество (кг):</label><br>
+    <input type="number" step="1" min="1" name="quantity" id="quantity" required>
+    <br><br>
+
+    <button type="submit" class="btn">Добавить позицию и создать закупку</button>
+    <a href="/purchases" class="btn btn-secondary">Отмена</a>
+</form>
+
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Редактирование неисправности</h2>
+
+<p><b>Место:</b> {{ mal.place }}</p>
+<p><b>Статус:</b> {{ mal.status }}</p>
+
+<form method="post" action="/malfunctions/update-text/{{ mal.id }}">
+
+    <label>Описание проблемы:</label><br>
+    <textarea name="description" rows="4" cols="50" required>{{ mal.description }}</textarea>
+    <br><br>
+
+    <!-- Место убрали полностью, менеджер/зоотехник менять его НЕ могут -->
+
+    <button type="submit" class="btn">Сохранить</button>
+    <a href="/malfunctions" class="btn">Отмена</a>
+
+</form>
+
+{% endblock %}

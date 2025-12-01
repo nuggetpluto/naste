@@ -3,35 +3,50 @@
 
 <h2>Рационы животных</h2>
 
-<a href="/rations/add" class="btn">+ Добавить рацион</a>
+<a href="/rations/add" class="btn">➕ Добавить рацион</a>
+<br><br>
+
+<form method="get" action="/rations" style="margin-bottom: 15px; display:flex; gap:10px; align-items:center;">
+    <label>Поиск по виду:</label>
+    <input type="text" name="search" placeholder="Например: Лиса" value="{{ search }}">
+    <button type="submit" class="btn">Найти</button>
+
+    {% if search %}
+        <a href="/rations" style="margin-left:10px;">Сбросить</a>
+    {% endif %}
+</form>
 
 <table>
     <thead>
-        <tr>
-            <th>ID</th>
-            <th>Вид</th>
-            <th>Корм</th>
-            <th>Количество (кг)</th>
-            <th>Частота</th>
-            <th>График</th>
-            <th>Действия</th>
-        </tr>
+    <tr>
+        <th>№</th>
+        <th>Вид</th>
+        <th>Корм</th>
+        <th>Количество (кг)</th>
+        <th>График</th>
+        <th>Действия</th>
+    </tr>
     </thead>
+
     <tbody>
-        {% for row in rows %}
+    {% for row in rows %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ row.species }}</td>
+        <td>{{ row.feed_name }}</td>
+        <td>{{ row.amount }}</td>
+        <td>{{ row.frequency }}</td>
+        <td>
+            <a class="btn" href="/rations/edit/{{ row.id }}">✏️</a>
+        </td>
+    </tr>
+    {% endfor %}
+
+    {% if rows|length == 0 %}
         <tr>
-            <td>{{ row.id }}</td>
-            <td>{{ row.species }}</td>
-            <td>{{ row.feed_name }}</td>
-            <td>{{ row.amount }}</td>
-            <td>{{ row.frequency }}</td>
-            <td>{{ row.schedule }}</td>
-            <td>
-                <a class="btn" href="/rations/edit/{{ row.id }}">Изменить</a>
-                <a class="btn btn-secondary" href="/rations/delete/{{ row.id }}" onclick="return confirm('Удалить рацион?')">Удалить</a>
-            </td>
+            <td colspan="6" style="text-align:center; color:#777;">Данные не найдены</td>
         </tr>
-        {% endfor %}
+    {% endif %}
     </tbody>
 </table>
 

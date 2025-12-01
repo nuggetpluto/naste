@@ -1,92 +1,116 @@
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, Query
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
-from permissions import role_required
+import psycopg2.extras
+
 from db import get_connection
+from permissions import role_required
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
 # ============================================================
-#  Список рационов
+#  СПИСОК РАЦИОНОВ
 # ============================================================
 
 @router.get("/rations", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
-async def rations_list(request: Request):
+@role_required(["manager", "zootechnician"])
+async def rations_list(
+        request: Request,
+        search: str | None = Query(default=None)
+):
+
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cursor.execute("""
-        SELECT r.id,
-               r.species,
-               f.name AS feed_name,
-               r.amount,
-               r.frequency,
-               r.schedule
-        FROM rations r
-        JOIN feed f ON r.feed_id = f.id
-        ORDER BY r.species ASC
-    """)
+    sql = """
+        SELECT r."IDРациона" AS id,
+               r."ВидЖивотного" AS species,
+               k."Наименование" AS feed_name,
+               r."Количество" AS amount,
+               r."ЧастотаКормления" AS frequency
+        FROM "Рацион" r
+        JOIN "Корм" k ON r."IDКорма" = k."IDКорма"
+    """
 
+    params = []
+
+    if search:
+        sql += ' WHERE r."ВидЖивотного" ILIKE %s'
+        params.append(f"%{search}%")
+
+    sql += ' ORDER BY r."ВидЖивотного"'
+
+    cursor.execute(sql, params)
     rows = cursor.fetchall()
     conn.close()
 
     return templates.TemplateResponse(
         "rations.html",
-        {"request": request, "rows": rows}
+        {"request": request, "rows": rows, "search": search or ""}
     )
 
 
 # ============================================================
-#  Страница добавления
+#  ФОРМА ДОБАВЛЕНИЯ
 # ============================================================
 
 @router.get("/rations/add", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
+@role_required(["manager", "zootechnician"])
 async def rations_add_form(request: Request):
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # список кормов
-    cursor.execute("SELECT id, name FROM feed ORDER BY name")
+    cursor.execute('SELECT "IDКорма", "Наименование" FROM "Корм" ORDER BY "Наименование"')
     feeds = cursor.fetchall()
-
-    # уникальные виды животных
-    cursor.execute("SELECT DISTINCT species FROM animals ORDER BY species")
-    species_list = [row["species"] for row in cursor.fetchall()]
 
     conn.close()
 
     return templates.TemplateResponse(
         "rations_add.html",
-        {"request": request, "feeds": feeds, "species_list": species_list}
+        {"request": request, "feeds": feeds, "error": None}
     )
 
 
 # ============================================================
-#  Обработка добавления
+#  ДОБАВЛЕНИЕ
 # ============================================================
 
 @router.post("/rations/add")
-@role_required(["admin", "zootechnician"])
+@role_required(["manager", "zootechnician"])
 async def rations_add(
         request: Request,
         feed_id: int = Form(...),
         species: str = Form(...),
-        amount: float = Form(...),
-        frequency: str = Form(...),
-        schedule: str = Form("2 раза в день")
+        amount: int = Form(...),
+        frequency: str = Form(...)
 ):
+
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    # Проверка количества
+    if amount <= 0:
+        return templates.TemplateResponse(
+            "rations_add.html",
+            {"request": request, "feeds": [], "error": "Количество должно быть положительным целым числом"}
+        )
+
+    # Проверка уникальности вида
+    cursor.execute('SELECT 1 FROM "Рацион" WHERE "ВидЖивотного" = %s', (species,))
+    if cursor.fetchone():
+        return templates.TemplateResponse(
+            "rations_add.html",
+            {"request": request, "feeds": [], "error": "Такой рацион уже существует"}
+        )
 
     cursor.execute("""
-        INSERT INTO rations (feed_id, species, amount, frequency, schedule)
-        VALUES (?, ?, ?, ?, ?)
-    """, (feed_id, species, amount, frequency, schedule))
+        INSERT INTO "Рацион"
+        ("IDКорма", "ВидЖивотного", "Количество", "ЧастотаКормления")
+        VALUES (%s, %s, %s, %s)
+    """, (feed_id, species, amount, frequency))
 
     conn.commit()
     conn.close()
@@ -94,75 +118,59 @@ async def rations_add(
 
 
 # ============================================================
-#  Страница редактирования
+#  ФОРМА РЕДАКТИРОВАНИЯ
 # ============================================================
 
 @router.get("/rations/edit/{ration_id}", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
+@role_required(["manager", "zootechnician"])
 async def rations_edit_form(request: Request, ration_id: int):
-    conn = get_connection()
-    cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM rations WHERE id=?", (ration_id,))
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cursor.execute('SELECT * FROM "Рацион" WHERE "IDРациона" = %s', (ration_id,))
     ration = cursor.fetchone()
 
-    # корма
-    cursor.execute("SELECT id, name FROM feed ORDER BY name")
+    cursor.execute('SELECT "IDКорма", "Наименование" FROM "Корм" ORDER BY "Наименование"')
     feeds = cursor.fetchall()
-
-    # виды
-    cursor.execute("SELECT DISTINCT species FROM animals ORDER BY species")
-    species_list = [row["species"] for row in cursor.fetchall()]
 
     conn.close()
 
     return templates.TemplateResponse(
         "rations_edit.html",
-        {"request": request, "ration": ration, "feeds": feeds, "species_list": species_list}
+        {"request": request, "ration": ration, "feeds": feeds}
     )
 
 
 # ============================================================
-#  Обновление
+#  ОБНОВЛЕНИЕ
 # ============================================================
 
 @router.post("/rations/edit/{ration_id}")
-@role_required(["admin", "zootechnician"])
+@role_required(["manager", "zootechnician"])
 async def rations_edit(
         request: Request,
         ration_id: int,
         feed_id: int = Form(...),
-        species: str = Form(...),
-        amount: float = Form(...),
-        frequency: str = Form(...),
-        schedule: str = Form("2 раза в день")
+        amount: int = Form(...),
+        frequency: str = Form(...)
 ):
+
+    if amount <= 0:
+        return HTMLResponse("Количество должно быть положительным целым числом")
+
     conn = get_connection()
     cursor = conn.cursor()
 
+    # Вид животного НЕ меняем
     cursor.execute("""
-        UPDATE rations
-        SET feed_id=?, species=?, amount=?, frequency=?, schedule=?
-        WHERE id=?
-    """, (feed_id, species, amount, frequency, schedule, ration_id))
+        UPDATE "Рацион"
+        SET "IDКорма"=%s,
+            "Количество"=%s,
+            "ЧастотаКормления"=%s
+        WHERE "IDРациона"=%s
+    """, (feed_id, amount, frequency, ration_id))
 
     conn.commit()
     conn.close()
-    return RedirectResponse("/rations", status_code=303)
-
-
-# ============================================================
-#  Удаление
-# ============================================================
-
-@router.get("/rations/delete/{ration_id}")
-@role_required(["admin", "zootechnician"])
-async def rations_delete(request: Request, ration_id: int):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("DELETE FROM rations WHERE id=?", (ration_id,))
-    conn.commit()
-    conn.close()
-
     return RedirectResponse("/rations", status_code=303)

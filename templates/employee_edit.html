@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Редактирование сотрудника</h2>
+
+{% if error %}
+<div style="background:#ffcccc; padding:10px; border:1px solid red; margin-bottom:15px;">
+    <b>Ошибка:</b> {{ error }}
+</div>
+{% endif %}
+
+<form method="post">
+    <label>ФИО:</label><br>
+    <input type="text" name="full_name" value="{{ employee.full_name }}" required><br><br>
+
+    <label>Телефон:</label><br>
+    <input type="text" name="phone" value="{{ employee.phone }}"><br><br>
+
+    <label>График работы:</label><br>
+    <input type="text" name="schedule" value="{{ employee.schedule }}"><br><br>
+
+    <button class="btn" type="submit">Сохранить</button>
+</form>
+
+{% endblock %}

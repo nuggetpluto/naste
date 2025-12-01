@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Корм</h2>
+
+{% if user.role in ["admin", "director", "manager"] %}
+<p>
+    <a href="/feeds/add" class="btn">➕ Добавить корм</a>
+</p>
+{% endif %}
+
+<!-- ФИЛЬТРЫ -->
+<form method="get"
+      style="margin-bottom: 20px; display: flex; gap: 25px; align-items: center;">
+
+    <!-- Тип корма -->
+    <div>
+        <label>Тип корма:</label>
+        <select name="feed_type" class="form-control">
+            <option value="">Все</option>
+            <option value="Сухой" {% if feed_type == "Сухой" %}selected{% endif %}>Сухой</option>
+            <option value="Влажный" {% if feed_type == "Влажный" %}selected{% endif %}>Влажный</option>
+            <option value="Комбикорм" {% if feed_type == "Комбикорм" %}selected{% endif %}>Комбикорм</option>
+        </select>
+    </div>
+
+    <!-- Только на исходе -->
+    <div class="checkbox-field">
+        <span>Только на исходе</span>
+        <input type="checkbox" name="low_only" value="1"
+               {% if low_only %}checked{% endif %}>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Применить</button>
+
+    <a href="/feeds" class="btn btn-secondary">Сбросить</a>
+
+</form>
+
+<style>
+    /* ОТДЕЛЬНО ДЛЯ ЧЕКБОКСА */
+    .checkbox-field {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-left: 10px;
+    }
+
+    .checkbox-field input[type="checkbox"] {
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+    }
+
+    .checkbox-field span {
+        font-size: 14px;
+    }
+
+    /* Корма на исходе */
+    .low-stock td {
+        color: #b00020;
+        font-weight: 600;
+    }
+
+    .badge-low {
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 8px;
+        border: 1px solid #b00020;
+        margin-left: 6px;
+    }
+</style>
+
+<table>
+    <thead>
+    <tr>
+        <th>№</th>
+        <th>Наименование</th>
+        <th>Тип</th>
+        <th>Остаток (кг)</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    {% for f in feeds %}
+        <tr class="{% if f.is_low %}low-stock{% endif %}">
+            <td>{{ loop.index }}</td>
+            <td>{{ f.name }}</td>
+            <td>{{ f.feed_type }}</td>
+            <td>
+                {{ f.stock }} кг
+                {% if f.is_low %}
+                    <span class="badge-low">мало</span>
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+
+    {% if feeds|length == 0 %}
+        <tr><td colspan="4" style="text-align:center; color:#777;">Нет данных</td></tr>
+    {% endif %}
+    </tbody>
+</table>
+
+{% endblock %}

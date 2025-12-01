@@ -1,18 +1,29 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Увольнение сотрудника</h2>
+
+{% if not employee %}
+<div style="background:#ffdddd; border:1px solid #cc0000; padding:10px;">
+    <b>Ошибка:</b> Сотрудник не найден.
+</div>
+
+<a href="/employees" class="btn">← Назад</a>
+
+{% else %}
 
 <p>Вы действительно хотите уволить сотрудника:</p>
 <h3>{{ employee.full_name }}</h3>
 
-<form method="post" action="/employees/fire/{{ employee.id }}">
-    <button type="submit" style="color:white; background:red; padding:8px;">
-        Подтвердить увольнение
+<form method="post" action="{{ url_for('fire_employee', employee_id=employee.id) }}">
+    <button type="submit" class="btn" style="background:red; color:white;">
+        Уволить сотрудника
     </button>
 </form>
 
 <br>
+<a href="/employees" class="btn">Отмена</a>
 
-<a href="/employees">Отмена</a>
+{% endif %}
 
 {% endblock %}

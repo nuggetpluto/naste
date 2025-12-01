@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Добавить корм</h2>
+
+<p class="text-muted">
+    Остаток на складе для нового корма будет установлен в 0 кг.
+    Пополнение происходит только через раздел «Закупки».
+</p>
+
+<form method="post">
+
+    <label for="name">Наименование корма:</label><br>
+    <input type="text" id="name" name="name" required style="width: 280px;">
+    <br><br>
+
+    <label for="feed_type">Тип корма:</label><br>
+    <select id="feed_type" name="feed_type" required>
+        <option value="Сухой">Сухой</option>
+        <option value="Влажный">Влажный</option>
+        <option value="Комбикорм">Комбикорм</option>
+    </select>
+    <br><br>
+
+    <button class="btn" type="submit">Сохранить</button>
+    <a href="/feeds" class="btn btn-secondary">Отмена</a>
+</form>
+
+{% endblock %}

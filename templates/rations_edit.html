@@ -5,35 +5,30 @@
 
 <form method="post">
 
-    <label>Вид животного:</label>
-    <select name="species" required>
-        {% for sp in species_list %}
-            <option value="{{ sp }}" {% if sp == ration.species %}selected{% endif %}>{{ sp }}</option>
-        {% endfor %}
-    </select>
+    <label>Вид животного:</label><br>
+    <input type="text" value="{{ ration.ВидЖивотного }}" readonly>
     <br><br>
 
-    <label>Корм:</label>
+    <label>Корм:</label><br>
     <select name="feed_id" required>
         {% for f in feeds %}
-            <option value="{{ f.id }}" {% if f.id == ration.feed_id %}selected{% endif %}>{{ f.name }}</option>
+            <option value="{{ f.IDКорма }}"
+                    {% if f.IDКорма == ration.IDКорма %}selected{% endif %}>
+                {{ f.Наименование }}
+            </option>
         {% endfor %}
     </select>
     <br><br>
 
-    <label>Количество (кг):</label>
-    <input type="number" step="0.1" name="amount" value="{{ ration.amount }}" required>
+    <label>Количество (кг):</label><br>
+    <input type="number" name="amount" min="1" step="1" value="{{ ration.Количество }}" required>
     <br><br>
 
-    <label>Частота:</label>
-    <input type="text" name="frequency" value="{{ ration.frequency }}" required>
+    <label>График:</label><br>
+    <input type="text" name="frequency" value="{{ ration.ЧастотаКормления }}" required>
     <br><br>
 
-    <label>График:</label>
-    <input type="text" name="schedule" value="{{ ration.schedule }}">
-    <br><br>
-
-    <button class="btn" type="submit">Сохранить изменения</button>
+    <button class="btn">Сохранить</button>
 </form>
 
 {% endblock %}

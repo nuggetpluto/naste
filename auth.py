@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Request, Form
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse, HTMLResponse
+import psycopg2.extras
+
 from db import get_connection
 from session import session_data
 
@@ -8,7 +10,9 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-# ------------------ Вход ------------------
+# =====================
+#       LOGIN
+# =====================
 
 @router.get("/login", response_class=HTMLResponse)
 async def login_form(request: Request):
@@ -16,29 +20,59 @@ async def login_form(request: Request):
 
 
 @router.post("/login", response_class=HTMLResponse)
-async def login(request: Request, username: str = Form(...), password: str = Form(...)):
+async def login(
+    request: Request,
+    full_name: str = Form(...),
+    password: str = Form(...)
+):
+    """
+    Вход по ФИО и паролю.
+    """
+
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     cursor.execute("""
-        SELECT * FROM employees 
-        WHERE username=? AND password=? AND status='active'
-    """, (username, password))
+        SELECT
+            "IDСотрудника" AS id,
+            "ФИО" AS full_name,
+            "Должность" AS position,
+            "КонтактныеДанные" AS phone,
+            "Пароль" AS password,
+            "Статус" AS status,
+            CASE
+                WHEN "Должность" = 'Администратор' THEN 'admin'
+                WHEN "Должность" = 'Руководитель'  THEN 'director'
+                WHEN "Должность" = 'Менеджер'      THEN 'manager'
+                WHEN "Должность" = 'Зоотехник'     THEN 'zootechnician'
+                ELSE 'zootechnician'
+            END AS role
+        FROM "Сотрудник"
+        WHERE "ФИО" = %s
+          AND "Пароль" = %s
+          AND "Статус" = 'Активен'
+    """, (full_name, password))
+
     user = cursor.fetchone()
     conn.close()
 
     if not user:
         return templates.TemplateResponse(
             "login.html",
-            {"request": request, "error": "Неверный логин или пароль, либо сотрудник уволен."}
+            {"request": request, "error": "Неверные ФИО или пароль, либо сотрудник не активен."}
         )
 
     session_data["current_user_id"] = user["id"]
+    session_data["current_user_role"] = user["role"]
+    session_data["current_user_name"] = user["full_name"]
 
-    return RedirectResponse(url="/home", status_code=303)
+    # ⬅ сразу отправляем на профиль
+    return RedirectResponse(url="/profile", status_code=303)
 
 
-# ------------------ Регистрация ------------------
+# =====================
+#     REGISTER
+# =====================
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_form(request: Request):
@@ -46,26 +80,21 @@ async def register_form(request: Request):
 
 
 @router.post("/register", response_class=HTMLResponse)
-async def register(request: Request,
-                   full_name: str = Form(...),
-                   username: str = Form(...),
-                   password: str = Form(...),
-                   phone: str = Form(""),
-                   role: str = Form("zootechnician")):
+async def register(
+    request: Request,
+    full_name: str = Form(...),
+    username: str = Form(...),
+    password: str = Form(...),
+    phone: str = Form(""),
+    role: str = Form("zootechnician"),
+):
 
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cursor.execute("SELECT id FROM employees WHERE username=?", (username,))
-    if cursor.fetchone():
-        conn.close()
-        return templates.TemplateResponse(
-            "register.html",
-            {"request": request, "error": "Логин уже используется."}
-        )
-
+    # Проверка телефона
     if phone:
-        cursor.execute("SELECT id FROM employees WHERE phone=?", (phone,))
+        cursor.execute('SELECT 1 FROM "Сотрудник" WHERE "КонтактныеДанные" = %s', (phone,))
         if cursor.fetchone():
             conn.close()
             return templates.TemplateResponse(
@@ -73,10 +102,23 @@ async def register(request: Request,
                 {"request": request, "error": "Телефон уже используется."}
             )
 
+    cursor.execute('SELECT COALESCE(MAX("IDСотрудника"), 0) + 1 AS new_id FROM "Сотрудник"')
+    new_id = cursor.fetchone()["new_id"]
+
+    role_to_position = {
+        "admin": "Администратор",
+        "director": "Руководитель",
+        "manager": "Менеджер",
+        "zootechnician": "Зоотехник",
+    }
+    position = role_to_position.get(role, "Зоотехник")
+
     cursor.execute("""
-        INSERT INTO employees (full_name, username, password, phone, role)
-        VALUES (?, ?, ?, ?, ?)
-    """, (full_name, username, password, phone, role))
+        INSERT INTO "Сотрудник"
+        ("IDСотрудника", "ФИО", "Должность",
+         "КонтактныеДанные", "ГрафикРаботы", "Пароль", "Статус")
+        VALUES (%s, %s, %s, %s, %s, %s, 'активен')
+    """, (new_id, full_name, position, phone if phone else None, "5/2 08:00-18:00", password))
 
     conn.commit()
     conn.close()
@@ -87,61 +129,39 @@ async def register(request: Request,
     )
 
 
-# ------------------ Главная ------------------
+# =====================
+#     HOME — теперь не нужен
+# =====================
 
 @router.get("/home", response_class=HTMLResponse)
 async def home_page(request: Request):
-
-    if "current_user_id" not in session_data:
-        return RedirectResponse(url="/login", status_code=303)
-
-    user_id = session_data["current_user_id"]
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
-    user = cursor.fetchone()
-
-    stats = {}
-
-    if user["role"] in ("admin", "director"):
-        cursor.execute("SELECT COUNT(*) FROM animals")
-        stats["animals"] = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM employees WHERE status='active'")
-        stats["employees"] = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM purchases")
-        stats["purchases"] = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM malfunctions")
-        stats["malfunctions"] = cursor.fetchone()[0]
-
-        cursor.execute("SELECT COUNT(*) FROM feedings")
-        stats["feedings"] = cursor.fetchone()[0]
-
-        cursor.execute("SELECT name, quantity FROM feed WHERE quantity < 5 ORDER BY quantity ASC")
-        stats["low_feed"] = cursor.fetchall()
-
-    conn.close()
-
-    if user["role"] == "admin":
-        return templates.TemplateResponse("home_admin.html", {"request": request, "user": user, "stats": stats})
-
-    if user["role"] == "director":
-        return templates.TemplateResponse("home_director.html", {"request": request, "user": user, "stats": stats})
-
-    if user["role"] == "manager":
-        return templates.TemplateResponse("home_manager.html", {"request": request, "user": user})
-
-    if user["role"] == "zootechnician":
-        return templates.TemplateResponse("home_zootechnician.html", {"request": request, "user": user})
-
-    return RedirectResponse("/profile")
+    # Полностью заменяем домашнюю страницу на переход к профилю
+    return RedirectResponse("/profile", status_code=303)
 
 
-# ------------------ Профиль ------------------
+# =====================
+#     PROFILE
+# =====================
+
+PROFILE_SELECT_SQL = """
+    SELECT
+        "IDСотрудника" AS id,
+        "ФИО" AS full_name,
+        "Должность" AS position,
+        "КонтактныеДанные" AS phone,
+        "Пароль" AS password,
+        "Статус" AS status,
+        CASE
+            WHEN "Должность" = 'Администратор' THEN 'admin'
+            WHEN "Должность" = 'Руководитель'  THEN 'director'
+            WHEN "Должность" = 'Менеджер'      THEN 'manager'
+            WHEN "Должность" = 'Зоотехник'     THEN 'zootechnician'
+            ELSE 'zootechnician'
+        END AS role
+    FROM "Сотрудник"
+    WHERE "IDСотрудника" = %s
+"""
+
 
 @router.get("/profile", response_class=HTMLResponse)
 async def profile_page(request: Request):
@@ -152,86 +172,84 @@ async def profile_page(request: Request):
     user_id = session_data["current_user_id"]
 
     conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cursor.execute(PROFILE_SELECT_SQL, (user_id,))
     user = cursor.fetchone()
-    conn.close()
-
-    return templates.TemplateResponse(
-        "profile.html",
-        {"request": request, "title": "Профиль сотрудника", "user": user}
-    )
-
-
-# ------------------ Обновление профиля — только смена пароля ------------------
-
-@router.post("/profile/update", response_class=HTMLResponse)
-async def update_profile(
-        request: Request,
-        old_password: str = Form(...),
-        new_password: str = Form(...),
-        confirm_password: str = Form(...)
-    ):
-
-    if "current_user_id" not in session_data:
-        return RedirectResponse(url="/login", status_code=303)
-
-    user_id = session_data["current_user_id"]
-
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
-    user = cursor.fetchone()
-
-    # Проверка старого пароля
-    if old_password != user["password"]:
-        conn.close()
-        return templates.TemplateResponse(
-            "profile.html",
-            {
-                "request": request,
-                "title": "Профиль сотрудника",
-                "user": user,
-                "error": "Старый пароль введён неверно."
-            }
-        )
-
-    # Проверка совпадения
-    if new_password != confirm_password:
-        conn.close()
-        return templates.TemplateResponse(
-            "profile.html",
-            {
-                "request": request,
-                "title": "Профиль сотрудника",
-                "user": user,
-                "error": "Новый пароль не совпадает с подтверждением."
-            }
-        )
-
-    # Обновление пароля
-    cursor.execute("UPDATE employees SET password=? WHERE id=?", (new_password, user_id))
-    conn.commit()
-
-    cursor.execute("SELECT * FROM employees WHERE id=?", (user_id,))
-    updated_user = cursor.fetchone()
     conn.close()
 
     return templates.TemplateResponse(
         "profile.html",
         {
             "request": request,
-            "title": "Профиль сотрудника",
-            "user": updated_user,
-            "message": "Пароль успешно обновлён!"
-        }
+            "user": user,
+            "message": None,
+            "error": None,
+        },
     )
 
 
-# ------------------ Выход ------------------
+# =====================
+#   UPDATE PASSWORD
+# =====================
+
+@router.post("/profile/update", response_class=HTMLResponse)
+async def update_profile(
+    request: Request,
+    old_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+):
+
+    if "current_user_id" not in session_data:
+        return RedirectResponse("/login")
+
+    user_id = session_data["current_user_id"]
+
+    conn = get_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cursor.execute(PROFILE_SELECT_SQL, (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        conn.close()
+        return RedirectResponse("/login", status_code=303)
+
+    if old_password != user["password"]:
+        conn.close()
+        return templates.TemplateResponse(
+            "profile.html",
+            {"request": request, "user": user, "error": "Старый пароль неверный.", "message": None},
+        )
+
+    if new_password != confirm_password:
+        conn.close()
+        return templates.TemplateResponse(
+            "profile.html",
+            {"request": request, "user": user, "error": "Пароли не совпадают.", "message": None},
+        )
+
+    cursor.execute(
+        'UPDATE "Сотрудник" SET "Пароль" = %s WHERE "IDСотрудника" = %s',
+        (new_password, user_id),
+    )
+    conn.commit()
+    conn.close()
+
+    user["password"] = new_password
+
+    return templates.TemplateResponse(
+        "profile.html",
+        {"request": request, "user": user, "message": "Пароль успешно обновлён.", "error": None},
+    )
+
+
+# =====================
+#       LOGOUT
+# =====================
 
 @router.get("/logout")
 async def logout():
     session_data.clear()
-    return RedirectResponse(url="/login", status_code=303)
+    return RedirectResponse("/login", status_code=303)

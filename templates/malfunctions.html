@@ -3,30 +3,97 @@
 
 <h2>Неисправности</h2>
 
-<p><a href="/malfunctions/add">➕ Добавить неисправность</a></p>
+<!-- ФИЛЬТРЫ -->
+<form method="get" style="margin-bottom: 20px; display: flex; gap: 15px;">
+
+    <div>
+        <label>Место:</label>
+        <select name="place" class="form-control">
+            <option value="all" {% if filter_place == "all" %}selected{% endif %}>Все</option>
+            <option value="Вольер" {% if filter_place == "Вольер" %}selected{% endif %}>Вольер</option>
+            <option value="Участок" {% if filter_place == "Участок" %}selected{% endif %}>Участок</option>
+        </select>
+    </div>
+
+    <div>
+        <label>Статус:</label>
+        <select name="status" class="form-control">
+            <option value="all" {% if filter_status == "all" %}selected{% endif %}>Все</option>
+            <option value="Зафиксировано" {% if filter_status == "Зафиксировано" %}selected{% endif %}>Зафиксировано</option>
+            <option value="В процессе" {% if filter_status == "В процессе" %}selected{% endif %}>В процессе</option>
+            <option value="Устранено" {% if filter_status == "Устранено" %}selected{% endif %}>Устранено</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Применить</button>
+
+    {% if filter_place != "all" or filter_status != "all" %}
+        <a href="/malfunctions" class="btn" style="margin-left:10px;">Сбросить</a>
+    {% endif %}
+
+</form>
+
+
+{% if role in ["manager", "zootechnician"] %}
+<p>
+    <a href="/malfunctions/add" class="btn">➕ Добавить неисправность</a>
+</p>
+{% endif %}
 
 <table>
     <thead>
     <tr>
-        <th>ID</th>
-        <th>Дата</th>
+        <th>№</th>
+        <th>Дата фиксации</th>
         <th>Сотрудник</th>
         <th>Место</th>
         <th>Описание</th>
         <th>Статус</th>
+        <th>Дата решения</th>
+
+        {% if role in ["manager", "zootechnician", "director"] %}
+            <th>Действия</th>
+        {% endif %}
     </tr>
     </thead>
 
     <tbody>
     {% for m in malfunctions %}
-        <tr>
-            <td>{{ m.id }}</td>
-            <td>{{ m.created_at }}</td>
-            <td>{{ m.employee_name }}</td>
-            <td>{{ m.place }}</td>
-            <td>{{ m.description }}</td>
-            <td>{{ m.status }}</td>
-        </tr>
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ m.created_at.strftime("%d.%m.%Y") }}</td>
+        <td>{{ m.employee_name }}</td>
+        <td>{{ m.place }}</td>
+        <td>{{ m.description }}</td>
+        <td>{{ m.status }}</td>
+
+        <td>
+            {% if m.solved_at %}
+                {{ m.solved_at.strftime("%d.%m.%Y") }}
+            {% else %}
+                —
+            {% endif %}
+        </td>
+
+        <td>
+            {% if role in ["manager", "zootechnician"] %}
+                {% if m.status != "Устранено" %}
+                    <a class="btn" href="/malfunctions/update-text/{{ m.id }}">✏️ Редактировать</a>
+                {% else %}
+                    —
+                {% endif %}
+            {% endif %}
+
+            {% if role == "director" %}
+                {% if m.status != "Устранено" %}
+                    <a class="btn" href="/malfunctions/edit/{{ m.id }}">⚙️ Статус</a>
+                {% else %}
+                    —
+                {% endif %}
+            {% endif %}
+        </td>
+
+    </tr>
     {% endfor %}
     </tbody>
 </table>

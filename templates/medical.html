@@ -1,32 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h2>Медицинские осмотры</h2>
+<h2>Медкарта животного: {{ animal.name }} ({{ animal.species }})</h2>
 
 <div style="margin: 15px 0;">
-    <a href="/medical/add" class="btn">➕ Добавить медосмотр</a>
+    {% if request.state.user.role == 'zootechnician' %}
+    <a href="/animals/{{ animal.id }}/medical/add" class="btn">➕ Добавить осмотр</a>
+    {% endif %}
+    <a href="/medical" class="btn">← Назад</a>
 </div>
 
 <table>
     <thead>
     <tr>
-        <th>ID</th>
-        <th>Животное</th>
+        <th>№</th>
+        <th>Дата осмотра</th>
         <th>Сотрудник</th>
         <th>Диагноз</th>
-        <th>Назначенное лечение</th>
-        <th>Дата осмотра</th>
+        <th>Лечение</th>
+        <th>Прививки</th>
+        <th>Результат</th>
     </tr>
     </thead>
-    <tbody>
-    {% for m in rows %}
+
+        <tbody>
+    {% for r in records %}
     <tr>
-        <td>{{ m.id }}</td>
-        <td>{{ m.animal_full }}</td>
-        <td>{{ m.employee_name }}</td>
-        <td>{{ m.diagnosis }}</td>
-        <td>{{ m.treatment if m.treatment else "" }}</td>
-        <td>{{ m.exam_date }}</td>
+        <td>{{ loop.index }}</td>
+        <td>{{ r.date.strftime('%d.%m.%Y') }}</td>
+        <td>{{ r.employee }}</td>
+        <td>{{ r.diagnosis }}</td>
+        <td>{{ r.treatment or "" }}</td>
+        <td>{{ r.vaccines or "" }}</td>
+        <td>{{ r.result }}</td>
     </tr>
     {% endfor %}
     </tbody>

@@ -1,38 +1,49 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Добавить животное</h2>
-<form method="post" action="/animals/add">
+
+<!-- вывод ошибки -->
+{% if error %}
+<div style="color: white; background: #d9534f; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+    {{ error }}
+</div>
+{% endif %}
+
+<form method="post" action="/animals/add" style="max-width: 400px;">
+
+    <label>Вид животного:</label><br>
+    <input type="text" name="species" required><br><br>
 
     <label>Кличка:</label><br>
     <input type="text" name="name" required><br><br>
 
-    <label>Вид:</label><br>
-    <input type="text" name="species" required><br><br>
+    <label>Возраст (лет):</label><br>
+    <input type="number" name="age" min="0" required><br><br>
 
     <label>Пол:</label><br>
-    <select name="gender">
-        <option value="Самец">Самец</option>
-        <option value="Самка">Самка</option>
+    <select name="gender" required>
+        <option value="м">м</option>
+        <option value="ж">ж</option>
     </select><br><br>
 
-    <label>Состояние здоровья:</label><br>
-    <select name="health_status">
-        <option value="Здоров">Здоров</option>
-        <option value="Болен">Болен</option>
-        <option value="На лечении">На лечении</option>
-    </select><br><br>
-
-    <label>Дата рождения:</label><br>
-    <input type="date" name="birth_date"><br><br>
-
-    <label>Ответственный сотрудник:</label><br>
-    <select name="employee_id">
-        <option value="">(не назначен)</option>
+    <label>Ответственный зоотехник:</label><br>
+    <select name="zootechnician_fio" required>
         {% for emp in employees %}
-        <option value="{{ emp.id }}">{{ emp.full_name }}</option>
+            <option value="{{ emp.full_name }}">{{ emp.full_name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <label>Рацион:</label><br>
+    <select name="ration_id" required>
+        {% for r in rations %}
+            <option value="{{ r.id }}">
+                {{ r.species }} — {{ r.feed_name }} ({{ r.amount }} {{ r.feed_unit }}, {{ r.frequency }})
+            </option>
         {% endfor %}
     </select><br><br>
 
     <button type="submit">Добавить</button>
 </form>
+
 {% endblock %}

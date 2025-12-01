@@ -1,39 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Животные</h2>
 
-<a href="/animals/add">➕ Добавить животное</a><br><br>
+<form method="get" action="/animals" style="margin-bottom: 15px; display:flex; gap:10px; align-items:center;">
 
-<table border="1" cellpadding="8">
-<tr>
-    <th>№</th>
-    <th>Кличка</th>
-    <th>Вид</th>
-    <th>Пол</th>
-    <th>Здоровье</th>
-    <th>Дата рождения</th>
-    <th>Ответственный</th>
-    <th>Статус</th>
-    <th>Действия</th>
-</tr>
+    <div>
+        <label>Поиск по виду:</label>
+        <input type="text" name="species" value="{{ filter_species }}" placeholder="Например: Зебра">
+    </div>
 
-{% for a in animals %}
-<tr>
-    <td>{{ loop.index }}</td>
-    <td>{{ a.name }}</td>
-    <td>{{ a.species }}</td>
-    <td>{{ a.gender }}</td>
-    <td>{{ a.health_status }}</td>
-    <td>{{ a.birth_date }}</td>
-    <td>{{ a.employee_name if a.employee_name else "-" }}</td>
-    <td>{{ a.status }}</td>
-    <td>
-        <a href="/animals/edit/{{ a.id }}">✏️ Изменить</a>
-        {% if a.status != "Умер" %}
-            | <a href="/animals/deactivate/{{ a.id }}">❌ Умер</a>
+    <div>
+        <label>Пол:</label>
+        <select name="gender">
+            <option value="">Любой</option>
+            <option value="м" {% if filter_gender == "м" %}selected{% endif %}>м</option>
+            <option value="ж" {% if filter_gender == "ж" %}selected{% endif %}>ж</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Найти</button>
+
+    {% if filter_species or filter_gender %}
+        <a href="/animals" class="btn" style="margin-left:10px;">Сбросить</a>
+    {% endif %}
+</form>
+
+{% if user.role == 'manager' %}
+    <p>
+        <a href="/animals/add" class="btn">Добавить животное</a>
+    </p>
+{% endif %}
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <tr>
+        <th>№</th>
+        <th>Вид</th>
+        <th>Кличка</th>
+        <th>Возраст</th>
+        <th>Пол</th>
+        <th>Дата поступления</th>
+        <th>Состояние здоровья</th>
+        <th>Ответственный сотрудник</th>
+        <th>Рацион</th>
+        {% if user.role == 'zootechnician' %}
+            <th>Действия</th>
         {% endif %}
-    </td>
-</tr>
-{% endfor %}
+    </tr>
+
+    {% for a in animals %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ a.species }}</td>
+        <td>{{ a.name }}</td>
+        <td>{{ a.age }}</td>
+        <td>{{ a.gender }}</td>
+        <td>{{ a.admission_date }}</td>
+        <td>{{ a.health_status }}</td>
+        <td>{{ a.employee_name if a.employee_name else "-" }}</td>
+        <td>{{ a.ration }}</td>
+
+        {% if user.role == 'zootechnician' %}
+            <td>
+                {% if a.health_status != 'Умер' %}
+                    <a href="/animals/mark_dead/{{ a.id }}" class="btn btn-secondary">Отметить как умершего</a>
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        {% endif %}
+    </tr>
+    {% endfor %}
 </table>
+
+{% if not animals %}
+    <p>Животных по заданному фильтру не найдено.</p>
+{% endif %}
+
 {% endblock %}

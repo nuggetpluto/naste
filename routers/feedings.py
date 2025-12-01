@@ -1,106 +1,197 @@
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
-from fastapi.templating import Jinja2Templates
+import psycopg2.extras
+
 from db import get_connection
 from permissions import role_required
+from app import templates
 
-templates = Jinja2Templates(directory="templates")
 router = APIRouter()
 
 
-# -------------------------------------------------------
-# СПИСОК КОРМЛЕНИЙ — доступ admin + zootechnician
-# -------------------------------------------------------
+# ======================================================
+# 📌 СПИСОК КОРМЛЕНИЙ — только для зоотехника
+# ======================================================
 @router.get("/feedings", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
-async def feedings_list(request: Request):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT 
-            f.id,
-            a.name || ' (' || a.species || ')' AS animal_full,
-            fd.name AS feed_name,
-            e.full_name AS employee_name,
-            f.amount,
-            f.feeding_time
-        FROM feedings f
-        JOIN animals a ON f.animal_id = a.id
-        JOIN feed fd ON f.feed_id = fd.id
-        JOIN employees e ON f.employee_id = e.id
-        ORDER BY f.id DESC
-    """)
-    feedings = cursor.fetchall()
-    conn.close()
-    return templates.TemplateResponse("feedings.html", {"request": request, "feedings": feedings})
+@role_required(["zootechnician"])
+async def feedings_list(
+   request: Request,
+   search: str | None = Query(default=None)   # <-- поиск по виду
+):
+   user = request.state.user
+   employee_id = user["id"]
+
+   conn = get_connection()
+   cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+   base_sql = """
+       SELECT
+           f."IDКормления" AS id,
+           f."ДатаИВремя"  AS feeding_time,
+           j."Кличка"      AS animal_name,
+           j."Вид"         AS animal_species,
+           s."ФИО"         AS employee_name
+       FROM "Кормление" f
+       JOIN "Животное" j  ON f."IDЖивотного"  = j."IDЖивотного"
+       JOIN "Сотрудник" s ON f."IDСотрудника" = s."IDСотрудника"
+       WHERE f."IDСотрудника" = %s
+   """
+
+   params = [employee_id]
+
+   # 🔸 Фильтр по виду животного
+   if search:
+       base_sql += ' AND j."Вид" ILIKE %s'
+       params.append(f"%{search}%")
+
+   base_sql += ' ORDER BY f."IDКормления" DESC'
+
+   cursor.execute(base_sql, params)
+   feedings = cursor.fetchall()
+   conn.close()
+
+   return templates.TemplateResponse(
+       "feedings.html",
+       {
+           "request": request,
+           "user": user,
+           "feedings": feedings,
+           "search_value": search or "",
+       }
+   )
 
 
-# -------------------------------------------------------
-# ФОРМА ДОБАВЛЕНИЯ — admin + zootechnician
-# -------------------------------------------------------
+# ======================================================
+# 📌 ФОРМА ДОБАВЛЕНИЯ — зоотехник
+# ======================================================
 @router.get("/feedings/add", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
-async def add_feeding_form(request: Request):
+@role_required(["zootechnician"])
+async def feeding_add_form(request: Request, error: str | None = None):
+    user = request.state.user
+    employee_id = user["id"]
+
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cursor.execute("SELECT id, name || ' (' || species || ')' AS animal_full FROM animals WHERE status='Активен'")
+    cursor.execute(
+        """
+        SELECT
+            "IDЖивотного" AS id,
+            "Кличка"      AS name,
+            "Вид"        AS species
+        FROM "Животное"
+        WHERE "IDСотрудника" = %s
+        ORDER BY "Кличка"
+        """,
+        (employee_id,)
+    )
+
     animals = cursor.fetchall()
-
-    cursor.execute("SELECT id, name FROM feed")
-    feeds = cursor.fetchall()
-
-    cursor.execute("SELECT id, full_name FROM employees WHERE status='active'")
-    employees = cursor.fetchall()
-
     conn.close()
+
     return templates.TemplateResponse(
-        "add_feeding.html",
+        "feeding_add.html",
         {
             "request": request,
+            "user": user,
             "animals": animals,
-            "feeds": feeds,
-            "employees": employees
+            "error": error,
         }
     )
 
 
-# -------------------------------------------------------
-# ДОБАВЛЕНИЕ КОРМЛЕНИЯ — admin + zootechnician
-# -------------------------------------------------------
+# ======================================================
+# 📌 POST — добавление кормления
+# ======================================================
 @router.post("/feedings/add", response_class=HTMLResponse)
-@role_required(["admin", "zootechnician"])
-async def add_feeding(
+@role_required(["zootechnician"])
+async def feeding_add(
         request: Request,
         animal_id: int = Form(...),
-        feed_id: int = Form(...),
-        employee_id: int = Form(...),
-        amount: float = Form(...)
 ):
+    user = request.state.user
+    employee_id = user["id"]
+
     conn = get_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cursor.execute("SELECT quantity FROM feed WHERE id=?", (feed_id,))
-    feed = cursor.fetchone()
+    # 1. Находим рацион
+    cursor.execute(
+        """
+        SELECT
+            r."IDКорма"    AS feed_id,
+            r."Количество" AS ration_quantity
+        FROM "Рацион" r
+        JOIN "Животное" j
+          ON r."ВидЖивотного" = j."Вид"
+        WHERE j."IDЖивотного" = %s
+        """,
+        (animal_id,)
+    )
+    ration = cursor.fetchone()
 
-    if not feed or feed["quantity"] < amount:
+    if not ration:
         conn.close()
-        return templates.TemplateResponse(
-            "add_feeding.html",
-            {
-                "request": request,
-                "error": "Недостаточно корма на складе!"
-            }
+        return await feeding_add_form(
+            request,
+            error="Для этого животного не задан рацион."
         )
 
-    cursor.execute("UPDATE feed SET quantity = quantity - ? WHERE id=?", (amount, feed_id))
+    feed_id = ration["feed_id"]
+    need_qty = ration["ration_quantity"]
 
-    cursor.execute("""
-        INSERT INTO feedings (animal_id, feed_id, employee_id, amount)
-        VALUES (?, ?, ?, ?)
-    """, (animal_id, feed_id, employee_id, amount))
+    # 2. Проверяем остаток
+    cursor.execute(
+        """
+        SELECT "ОстатокНаСкладе" AS stock
+        FROM "Корм"
+        WHERE "IDКорма" = %s
+        """,
+        (feed_id,)
+    )
+    stock = cursor.fetchone()["stock"]
+
+    if stock < need_qty:
+        conn.close()
+        return await feeding_add_form(
+            request,
+            error=f"❌ Недостаточно корма! Нужно {need_qty}, доступно {stock}"
+        )
+
+    # 3. Проводим кормление
+    cursor.execute(
+        """
+        INSERT INTO "Кормление"
+            ("IDЖивотного", "IDСотрудника", "ДатаИВремя")
+        VALUES (%s, %s, NOW())
+        RETURNING "IDКормления"
+        """,
+        (animal_id, employee_id)
+    )
+    feeding_id = cursor.fetchone()["IDКормления"]
+
+    cursor.execute(
+        """
+        UPDATE "Корм"
+        SET "ОстатокНаСкладе" = "ОстатокНаСкладе" - %s
+        WHERE "IDКорма" = %s
+        """,
+        (need_qty, feed_id)
+    )
+
+    cursor.execute('SELECT COALESCE(MAX("IDРасхода"), 0) + 1 AS new_id FROM "Расход"')
+    exp_id = cursor.fetchone()["new_id"]
+
+    cursor.execute(
+        """
+        INSERT INTO "Расход"
+            ("IDРасхода", "IDКорма", "IDСотрудника", "Дата", "Количество")
+        VALUES (%s, %s, %s, CURRENT_DATE, %s)
+        """,
+        (exp_id, feed_id, employee_id, need_qty)
+    )
 
     conn.commit()
     conn.close()
 
-    return RedirectResponse(url="/feedings", status_code=303)
+    return RedirectResponse("/feedings", status_code=303)

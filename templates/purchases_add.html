@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Новая закупка</h2>
+
+<p>Сотрудник: <b>{{ user.full_name }}</b></p>
+
+<form method="post">
+
+    <label>Поставщик:</label><br>
+    <input type="text" name="supplier" required style="width: 280px;">
+    <br><br>
+
+    <button class="btn" type="submit">Создать заявку</button>
+</form>
+
+{% endblock %}

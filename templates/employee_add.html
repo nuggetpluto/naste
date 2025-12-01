@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Добавить сотрудника</h2>
+
+{% if error %}
+<div style="background:#ffdddd; padding:10px; border:1px solid #cc0000; margin-bottom:15px;">
+    <b>Ошибка:</b> {{ error }}
+</div>
+{% endif %}
+
+<form method="post">
+
+    <label>ФИО:</label><br>
+    <input type="text" name="full_name"
+           value="{{ form.full_name if form else '' }}" required><br><br>
+
+    <label>Должность:</label><br>
+    <select name="role">
+        <option value="Менеджер"
+                {% if form.role == 'Менеджер' %}selected{% endif %}>Менеджер</option>
+        <option value="Зоотехник"
+                {% if form.role == 'Зоотехник' %}selected{% endif %}>Зоотехник</option>
+        <option value="Руководитель"
+                {% if form.role == 'Руководитель' %}selected{% endif %}>Руководитель</option>
+    </select>
+    <br><br>
+
+    <label>Телефон:</label><br>
+    <input type="text" name="phone"
+           value="{{ form.phone if form else '' }}"><br><br>
+
+    <label>График работы:</label><br>
+    <input type="text" name="schedule"
+           value="{{ form.schedule if form else '' }}"><br><br>
+
+    <label>Пароль (для входа):</label><br>
+    <input type="password" name="password" required><br><br>
+
+    <button type="submit" class="btn">Сохранить</button>
+</form>
+
+{% endblock %}

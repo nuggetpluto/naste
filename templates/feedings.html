@@ -1,28 +1,56 @@
 {% extends "base.html" %}
 {% block content %}
+
 <h2>Кормления</h2>
 
-<a href="/feedings/add">➕ Новое кормление</a><br><br>
+<form method="get" action="/feedings" style="margin-bottom:15px; display:flex; gap:10px; align-items:center;">
+    <input type="text"
+           name="search"
+           placeholder="Поиск по виду
+"
+           value="{{ search_value }}"
+           style="padding:6px;">
 
-<table border="1" cellpadding="8">
-<tr>
-    <th>№</th>
-    <th>Животное</th>
-    <th>Корм</th>
-    <th>Сотрудник</th>
-    <th>Количество</th>
-    <th>Дата и время</th>
-</tr>
+    <button type="submit" class="btn">Найти</button>
 
-{% for f in feedings %}
-<tr>
-    <td>{{ loop.index }}</td>
-    <td>{{ f.animal_full }}</td>
-    <td>{{ f.feed_name }}</td>
-    <td>{{ f.employee_name }}</td>
-    <td>{{ f.amount }}</td>
-    <td>{{ f.feeding_time }}</td>
-</tr>
-{% endfor %}
+    {% if search_value %}
+        <a href="/feedings" class="btn btn-secondary">Сбросить</a>
+    {% endif %}
+</form>
+
+<p>
+    <a href="/feedings/add" class="btn">➕ Новое кормление</a>
+    <a href="/expenses/my" class="btn btn-secondary">📊 Мои расходы</a>
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>№</th>
+            <th>Животное</th>
+            <th>Сотрудник</th>
+            <th>Дата и время</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for f in feedings %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ f.animal_name }} ({{ f.animal_species }})</td>
+            <td>{{ f.employee_name }}</td>
+            <td>{{ f.feeding_time.strftime("%d.%m.%Y %H:%M") }}</td>
+        </tr>
+    {% endfor %}
+
+    {% if feedings|length == 0 %}
+        <tr>
+            <td colspan="4" style="text-align:center; color:#777;">
+                Ничего не найдено
+            </td>
+        </tr>
+    {% endif %}
+    </tbody>
 </table>
+
 {% endblock %}

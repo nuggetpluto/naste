@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{# передаём active = "faults" #}
+{% set active = "faults" %}
+{% include "analytics_navbar.html" %}
+
+<h2>Аналитика неисправностей</h2>
+
+<hr>
+
+<form id="filters-form" class="mb-3">
+    <label for="place">Место:</label>
+    <select id="place" name="place">
+        <option value="Вольер">Вольер</option>
+        <option value="Участок">Участок</option>
+    </select>
+
+    &nbsp;&nbsp;
+
+    <label for="date_from">С:</label>
+    <input type="date" id="date_from" name="date_from">
+
+    <label for="date_to">по:</label>
+    <input type="date" id="date_to" name="date_to">
+
+    &nbsp;&nbsp;
+
+    <button type="button" class="btn" id="apply-filters">Применить</button>
+    <button type="button" class="btn btn-secondary" id="export-csv">Экспорт CSV</button>
+</form>
+
+<hr>
+
+<h3>Количество неисправностей по статусам</h3>
+<canvas id="faultsChart" width="600" height="250"></canvas>
+
+<hr>
+
+<h3>Детальная таблица неисправностей</h3>
+
+<table id="faults-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Место</th>
+            <th>Описание</th>
+            <th>Статус</th>
+            <th>Дата фиксации</th>
+            <th>Дата устранения</th>
+            <th>Сотрудник</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let faultsChart = null;
+
+    function getFilters() {
+        const params = new URLSearchParams();
+
+        params.append("place", document.getElementById("place").value);
+
+        const dateFrom = document.getElementById("date_from").value;
+        const dateTo = document.getElementById("date_to").value;
+
+        if (dateFrom) params.append("date_from", dateFrom);
+        if (dateTo) params.append("date_to", dateTo);
+
+        return params;
+    }
+
+    async function loadChart() {
+        const resp = await fetch("/analytics/faults/chart?" + getFilters().toString());
+        const data = await resp.json();
+
+        const ctx = document.getElementById("faultsChart").getContext("2d");
+
+        if (faultsChart) faultsChart.destroy();
+
+        faultsChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: data.labels,
+                datasets: [{
+                    label: "Количество неисправностей",
+                    data: data.data
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    async function loadTable() {
+        const resp = await fetch("/analytics/faults/table?" + getFilters().toString());
+        const data = await resp.json();
+
+        const tbody = document.querySelector("#faults-table tbody");
+        tbody.innerHTML = "";
+
+        data.rows.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${row.id}</td>
+                <td>${row.place}</td>
+                <td>${row.description}</td>
+                <td>${row.status}</td>
+                <td>${row.created_at}</td>
+                <td>${row.resolved_at}</td>
+                <td>${row.employee}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function reloadAll() {
+        await loadChart();
+        await loadTable();
+    }
+
+    document.getElementById("apply-filters").addEventListener("click", reloadAll);
+
+    document.getElementById("export-csv").addEventListener("click", () => {
+        window.location.href = "/analytics/faults/export/csv?" + getFilters().toString();
+    });
+
+    document.addEventListener("DOMContentLoaded", reloadAll);
+</script>
+
+{% endblock %}
