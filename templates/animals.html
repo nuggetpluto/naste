@@ -4,7 +4,6 @@
 <h2>Животные</h2>
 
 <form method="get" action="/animals" style="margin-bottom: 15px; display:flex; gap:10px; align-items:center;">
-
     <div>
         <label>Поиск по виду:</label>
         <input type="text" name="species" value="{{ filter_species }}" placeholder="Например: Зебра">
@@ -27,12 +26,10 @@
 </form>
 
 {% if user.role == 'manager' %}
-    <p>
-        <a href="/animals/add" class="btn">Добавить животное</a>
-    </p>
+    <p><a href="/animals/add" class="btn">Добавить животное</a></p>
 {% endif %}
 
-<table border="1" cellpadding="8" cellspacing="0">
+<table border="1" cellpadding="8" cellspacing="0" style="width:100%;">
     <tr>
         <th>№</th>
         <th>Вид</th>
@@ -43,9 +40,6 @@
         <th>Состояние здоровья</th>
         <th>Ответственный сотрудник</th>
         <th>Рацион</th>
-        {% if user.role == 'zootechnician' %}
-            <th>Действия</th>
-        {% endif %}
     </tr>
 
     {% for a in animals %}
@@ -56,25 +50,87 @@
         <td>{{ a.age }}</td>
         <td>{{ a.gender }}</td>
         <td>{{ a.admission_date }}</td>
-        <td>{{ a.health_status }}</td>
+
+        <!-- 📌 Состояние здоровья -->
+        <td>
+    <div id="cell-{{ a.id }}" style="display:flex; align-items:center; gap:6px;">
+
+        {% if a.health_status == "Умер" %}
+            <!-- ❌ Умер — менять нельзя -->
+            <span style="color: red; font-weight: bold;">Умер</span>
+        {% else %}
+            <!-- ✔ Жив — можно менять -->
+            <span id="text-{{ a.id }}">{{ a.health_status }}</span>
+
+            <button onclick="showSelect({{ a.id }})"
+                    style="background:none; border:none; cursor:pointer; font-size:18px;">
+                ✏️
+            </button>
+
+            <select id="select-{{ a.id }}"
+                    onchange="saveStatus({{ a.id }})"
+                    style="display:none; padding:3px;">
+                {% set options = ["Здоров", "Лечится", "Выздоровел", "Умер"] %}
+                {% for st in options %}
+                    <option value="{{ st }}" {% if a.health_status == st %}selected{% endif %}>
+                        {{ st }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endif %}
+
+    </div>
+</td>
+
         <td>{{ a.employee_name if a.employee_name else "-" }}</td>
         <td>{{ a.ration }}</td>
-
-        {% if user.role == 'zootechnician' %}
-            <td>
-                {% if a.health_status != 'Умер' %}
-                    <a href="/animals/mark_dead/{{ a.id }}" class="btn btn-secondary">Отметить как умершего</a>
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        {% endif %}
     </tr>
     {% endfor %}
 </table>
 
 {% if not animals %}
-    <p>Животных по заданному фильтру не найдено.</p>
+<p>Животных по заданному фильтру не найдено.</p>
 {% endif %}
+
+<script>
+
+/* 🟡 Появление select по клику */
+function showSelect(id) {
+    document.getElementById("text-" + id).style.display = "none";
+    const select = document.getElementById("select-" + id);
+    select.style.display = "inline-block";
+    select.focus();
+}
+
+/* 🟢 AJAX – сохранить новое состояние */
+async function saveStatus(id) {
+    const select = document.getElementById(`select-${id}`);
+    const status = select.value;
+
+    try {
+        const response = await fetch(`/animals/update_health_ajax/${id}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `status=${encodeURIComponent(status)}`
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert("Ошибка: " + data.error);
+            return;
+        }
+
+        // ⬅ вернуть текст и скрыть select
+        document.getElementById("text-" + id).innerText = status;
+        document.getElementById("text-" + id).style.display = "inline-block";
+        select.style.display = "none";
+
+    } catch (error) {
+        alert("Ошибка: " + error.message);
+    }
+}
+
+</script>
 
 {% endblock %}

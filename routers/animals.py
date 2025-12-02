@@ -300,6 +300,64 @@ async def add_animal(
 
 
 # ======================================================
+# 📌 AJAX обновление состояния здоровья — менеджер
+# ======================================================
+
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+@router.post("/animals/update_health_ajax/{animal_id}")
+@role_required(["manager"])
+async def update_health_ajax(request: Request, animal_id: int, status: str = Form(...)):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        # Проверяем текущее состояние
+        cursor.execute(
+            'SELECT "СостояниеЗдоровья" FROM "Животное" WHERE "IDЖивотного" = %s',
+            (animal_id,)
+        )
+        current_status = cursor.fetchone()[0]
+
+        # НЕЛЬЗЯ менять умершего
+        if current_status == "Умер":
+            conn.close()
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "error": "Нельзя изменять состояние умершего животного"}
+            )
+
+        # Обновление состояния
+        cursor.execute(
+            '''
+            UPDATE "Животное"
+            SET "СостояниеЗдоровья" = %s
+            WHERE "IDЖивотного" = %s
+            ''',
+            (status, animal_id)
+        )
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e)}
+        )
+
+    conn.close()
+    return JSONResponse(
+        status_code=200,
+        content={"success": True, "new_status": status}
+    )
+
+
+# ======================================================
 # 📌 ОТМЕТИТЬ «УМЕР» — только зоотехник
 # ======================================================
 @router.get("/animals/mark_dead/{animal_id}", response_class=HTMLResponse)
@@ -321,3 +379,4 @@ async def mark_animal_dead(request: Request, animal_id: int):
     conn.close()
 
     return RedirectResponse(url="/animals", status_code=303)
+

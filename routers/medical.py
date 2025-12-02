@@ -63,11 +63,13 @@ async def medical_list(request: Request, animal_id: int):
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    # Загружаем животное + состояние
     cursor.execute(
         '''
         SELECT "IDЖивотного" AS id,
                "Вид"         AS species,
-               "Кличка"      AS name
+               "Кличка"      AS name,
+               "СостояниеЗдоровья" AS health_status
         FROM "Животное"
         WHERE "IDЖивотного" = %s
         ''',
@@ -79,6 +81,7 @@ async def medical_list(request: Request, animal_id: int):
         conn.close()
         return HTMLResponse("Животное не найдено", status_code=404)
 
+    # Загружаем записи медкарты
     cursor.execute(
         '''
         SELECT 
@@ -120,21 +123,36 @@ async def medical_add_form(request: Request, animal_id: int):
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    # Загружаем животное
     cursor.execute(
         '''
         SELECT "IDЖивотного" AS id,
                "Вид"         AS species,
-               "Кличка"      AS name
+               "Кличка"      AS name,
+               "СостояниеЗдоровья" AS health_status
         FROM "Животное"
         WHERE "IDЖивотного" = %s
         ''',
         (animal_id,)
     )
     animal = cursor.fetchone()
-    conn.close()
 
     if not animal:
+        conn.close()
         return HTMLResponse("Животное не найдено", status_code=404)
+
+    # Блокировка добавления
+    if animal["health_status"] == "Умер":
+        conn.close()
+        return HTMLResponse(
+            f"""
+            <h2 style='color:red'>Животное умерло — добавление осмотра запрещено.</h2>
+            <a class='btn' href='/animals/{animal_id}/medical'>Вернуться</a>
+            """,
+            status_code=403
+        )
+
+    conn.close()
 
     return templates.TemplateResponse(
         "medical_add.html",
@@ -148,33 +166,34 @@ async def medical_add_form(request: Request, animal_id: int):
 
 
 # ======================================================
-# 📌 POST — добавление медосмотра (с обработкой ошибок)
+# 📌 POST — добавление медосмотра (c проверкой «умер»)
 # ======================================================
 @router.post("/animals/{animal_id}/medical/add", response_class=HTMLResponse)
 @role_required(["zootechnician"])
 async def medical_add(
     request: Request,
     animal_id: int,
-    diagnosis: str = Form(...),   # делаем обязательным
+    diagnosis: str = Form(...),
     treatment: str = Form(""),
     vaccines: str = Form(""),
     result: str = Form(...),
 ):
-    # Функция для красивой капитализации
+
+    # Капитализация текстов
     def capitalize(s: str | None):
         if not s or s.strip() == "":
             return ""
         s = s.strip()
         return s[0].upper() + s[1:]
 
-    # Узнаём сотрудника (текущего зоотехника)
+    # Узнаём сотрудника (зоотехника)
     user = request.state.user
     employee_fio = user.get("full_name") or user.get("ФИО")
 
     conn = get_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    # Получаем ID сотрудника
+    # ID сотрудника
     cursor.execute(
         'SELECT "IDСотрудника" FROM "Сотрудник" WHERE "ФИО" = %s',
         (employee_fio,)
@@ -187,15 +206,16 @@ async def medical_add(
 
     employee_id = emp["IDСотрудника"]
 
-    # Обработка полей
-    diagnosis = capitalize(diagnosis)
-    treatment_value = capitalize(treatment) or None
-    vaccines = capitalize(vaccines) or None
-    result = capitalize(result)
-
-    # Загружаем животное (нужно для ошибок)
+    # Загружаем животное + статус
     cursor.execute(
-        'SELECT "IDЖивотного" AS id, "Вид" AS species, "Кличка" AS name FROM "Животное" WHERE "IDЖивотного" = %s',
+        '''
+        SELECT "IDЖивотного" AS id,
+               "Вид" AS species,
+               "Кличка" AS name,
+               "СостояниеЗдоровья" AS health_status
+        FROM "Животное"
+        WHERE "IDЖивотного" = %s
+        ''',
         (animal_id,)
     )
     animal = cursor.fetchone()
@@ -204,7 +224,24 @@ async def medical_add(
         conn.close()
         return HTMLResponse("Животное не найдено", status_code=404)
 
-    # Пытаемся сохранить
+    # Блокировка добавления
+    if animal["health_status"] == "Умер":
+        conn.close()
+        return HTMLResponse(
+            f"""
+            <h2 style='color:red'>Нельзя добавлять осмотр — животное умерло.</h2>
+            <a class='btn' href='/animals/{animal_id}/medical'>Вернуться</a>
+            """,
+            status_code=403
+        )
+
+    # Обработка полей
+    diagnosis = capitalize(diagnosis)
+    treatment_value = capitalize(treatment) or None
+    vaccines = capitalize(vaccines) or None
+    result = capitalize(result)
+
+    # Сохранение
     try:
         cursor.execute(
             '''
@@ -227,7 +264,6 @@ async def medical_add(
 
         conn.close()
 
-        # Возвращаем страницу с ошибкой и заполненными полями
         return templates.TemplateResponse(
             "medical_add.html",
             {

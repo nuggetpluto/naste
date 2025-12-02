@@ -4,9 +4,14 @@
 <h2>Медкарта животного: {{ animal.name }} ({{ animal.species }})</h2>
 
 <div style="margin: 15px 0;">
-    {% if request.state.user.role == 'zootechnician' %}
-    <a href="/animals/{{ animal.id }}/medical/add" class="btn">➕ Добавить осмотр</a>
+    {% if animal.health_status != 'Умер' and request.state.user.role == 'zootechnician' %}
+        <a href="/animals/{{ animal.id }}/medical/add" class="btn">➕ Добавить осмотр</a>
+    {% else %}
+        <span style="color: red; font-weight: bold;">
+            Животное умерло — редактирование закрыто
+        </span>
     {% endif %}
+
     <a href="/medical" class="btn">← Назад</a>
 </div>
 
